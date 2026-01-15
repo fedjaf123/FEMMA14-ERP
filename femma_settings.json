@@ -1,0 +1,532 @@
+{
+  "prefix_map": {
+    "AF-": "Afro rep",
+    "RR-": "Ravni rep",
+    "OPK-": "Repovi OPK",
+    "AR-": "Ariana repovi",
+    "KRR-": "Kratki repovi",
+    "KRO-": "Kratki repovi",
+    "KRA-": "Kratki repovi",
+    "TRK-": "Repovi trakica",
+    "DR-": "Dugi repovi",
+    "U-": "U klipse",
+    "BD-": "Blowdry klipse",
+    "BDR-": "Blowdry repovi",
+    "EKS-": "Ekstenzije",
+    "EKSOPK": "Ekstenzije OPK",
+    "SIS-": "Siske",
+    "P0": "Klasi\u010dne perike",
+    "PR": "Premium perike"
+  },
+  "custom_skus": [
+    "AF-PLAT",
+    "AF-SMEDPR",
+    "AR-10",
+    "AR-6",
+    "AR-MHG",
+    "AR-SMEDPR",
+    "AR-SRP",
+    "BD-10",
+    "BD-1B",
+    "BD-2",
+    "BD-4",
+    "BD-6",
+    "BD-613",
+    "BD-K16",
+    "BD-PLAT",
+    "BD-SMEDPR",
+    "BD-SRP",
+    "BDR-1B",
+    "BDR-2",
+    "BDR-4",
+    "BDR-6",
+    "BDR-613",
+    "BDR-K16",
+    "BDR-SMEDPR",
+    "BDR-SRP",
+    "EKS-MGH",
+    "EKS-PLAT",
+    "EKS-SMEDPR",
+    "KRO-PLAT",
+    "KRO-SMEDPR",
+    "KRR-10",
+    "KRR-PLAT",
+    "KRR-SRP",
+    "OPK-8",
+    "OPK-PLAT",
+    "OPK-SMEDPR",
+    "OPK-SRP",
+    "RR-8",
+    "RR-PLAT",
+    "RR-SMEDPR",
+    "U-10",
+    "U-1B",
+    "U-2",
+    "U-350",
+    "U-4",
+    "U-6",
+    "U-613",
+    "U-K16",
+    "U-PLAT",
+    "U-SMEDPR",
+    "U-SMO",
+    "U-SRP",
+    "U-VIOLET"
+  ],
+  "sku_category_overrides": {},
+  "purchase_prices_by_prefix": {
+    "RR-": 6.5,
+    "AF-": 7.5,
+    "OPK-": 7.0,
+    "KRR-": 6.0,
+    "KRO-": 7.0,
+    "KRA-": 6.0,
+    "AR-": 6.0,
+    "TRK-": 6.0,
+    "DR-": 8.0,
+    "EKS-": 7.0,
+    "EKSOPK": 8.0,
+    "U-": 9.5,
+    "BD-": 9.0,
+    "P0": 8.5,
+    "PR": 31.0,
+    "BDR-": 7.5
+  },
+  "purchase_price_overrides": {},
+  "mp_prices_by_category": {},
+  "usd_bam_rate": 0.0,
+  "net_margin_transport_usd": 0.0,
+  "net_margin_customs_pct": 0.0,
+  "net_margin_marketing_bam": 0.0,
+  "net_margin_space_bam": 1300.0,
+  "net_margin_labor_bam": 15000.0,
+  "net_margin_accounting_bam": 350.0,
+  "net_margin_utilities_bam": 300.0,
+  "kalkulacije_folder": "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije",
+  "kalk_processed_files": {
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_19-160-000001.xlsx": {
+      "mtime": 1768412917.1133437,
+      "size": 13595
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_19-160-000002.xlsx": {
+      "mtime": 1768412917.4176486,
+      "size": 12984
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_19-160-000003.xlsx": {
+      "mtime": 1768412917.788675,
+      "size": 18421
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_19-160-000004.xlsx": {
+      "mtime": 1768412918.2278578,
+      "size": 16824
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_19-160-000005.xlsx": {
+      "mtime": 1768412918.4985683,
+      "size": 13449
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_19-160-000006.xlsx": {
+      "mtime": 1768412918.7647922,
+      "size": 12668
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_19-160-000007.xlsx": {
+      "mtime": 1768412918.9623969,
+      "size": 13637
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_20-160-000001.xlsx": {
+      "mtime": 1768412919.1641319,
+      "size": 13369
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_20-160-000002.xlsx": {
+      "mtime": 1768412919.381945,
+      "size": 14392
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_21-160-000001.xlsx": {
+      "mtime": 1768412919.5915923,
+      "size": 14685
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_21-160-000002.xlsx": {
+      "mtime": 1768412919.7940147,
+      "size": 12849
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_21-160-000003.xlsx": {
+      "mtime": 1768436296.808646,
+      "size": 17432
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_21-160-000004.xlsx": {
+      "mtime": 1768412920.1905527,
+      "size": 12720
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_21-160-000005.xlsx": {
+      "mtime": 1768412920.386961,
+      "size": 12794
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_21-160-000006.xlsx": {
+      "mtime": 1768412920.5781107,
+      "size": 13125
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_21-160-000007.xlsx": {
+      "mtime": 1768412920.7749264,
+      "size": 13454
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_22-160-000001.xlsx": {
+      "mtime": 1768412920.9968803,
+      "size": 15001
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_22-160-000002.xlsx": {
+      "mtime": 1768412921.19199,
+      "size": 13154
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_22-160-000003.xlsx": {
+      "mtime": 1768412921.394288,
+      "size": 12739
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_22-160-000004.xlsx": {
+      "mtime": 1768412921.596194,
+      "size": 13526
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_22-160-000005.xlsx": {
+      "mtime": 1768412921.7893698,
+      "size": 13049
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_22-160-000006.xlsx": {
+      "mtime": 1768412921.9998286,
+      "size": 13917
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_22-160-000007.xlsx": {
+      "mtime": 1768412922.2027764,
+      "size": 14238
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_22-160-000008.xlsx": {
+      "mtime": 1768412922.4009085,
+      "size": 12998
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_22-160-000009.xlsx": {
+      "mtime": 1768412922.610622,
+      "size": 13115
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_22-160-000010.xlsx": {
+      "mtime": 1768412922.8024182,
+      "size": 13047
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000001.xlsx": {
+      "mtime": 1768412922.9983547,
+      "size": 12676
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000002.xlsx": {
+      "mtime": 1768412923.2423112,
+      "size": 13841
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000003.xlsx": {
+      "mtime": 1768412923.4964368,
+      "size": 13079
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000004.xlsx": {
+      "mtime": 1768412923.9090168,
+      "size": 22953
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000005.xlsx": {
+      "mtime": 1768412924.2046177,
+      "size": 12757
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000006.xlsx": {
+      "mtime": 1768412924.469748,
+      "size": 12681
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000007.xlsx": {
+      "mtime": 1768412924.7646613,
+      "size": 14051
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000008.xlsx": {
+      "mtime": 1768412925.0050578,
+      "size": 12720
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000009.xlsx": {
+      "mtime": 1768412925.2846582,
+      "size": 15457
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000010.xlsx": {
+      "mtime": 1768412925.5901144,
+      "size": 12989
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000011.xlsx": {
+      "mtime": 1768412925.8608475,
+      "size": 12537
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000012.xlsx": {
+      "mtime": 1768412926.1754427,
+      "size": 12643
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000013.xlsx": {
+      "mtime": 1768412926.400298,
+      "size": 13208
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000014.xlsx": {
+      "mtime": 1768412926.5964894,
+      "size": 12684
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000015.xlsx": {
+      "mtime": 1768412926.8016677,
+      "size": 14205
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000016.xlsx": {
+      "mtime": 1768412927.0033097,
+      "size": 12679
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000017.xlsx": {
+      "mtime": 1768412927.1960845,
+      "size": 12645
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000018.xlsx": {
+      "mtime": 1768412927.4008005,
+      "size": 12669
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000019.xlsx": {
+      "mtime": 1768412927.598861,
+      "size": 13040
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000020.xlsx": {
+      "mtime": 1768412927.804871,
+      "size": 14142
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000021.xlsx": {
+      "mtime": 1768412928.0115972,
+      "size": 13049
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000022.xlsx": {
+      "mtime": 1768412928.2145467,
+      "size": 13606
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000023.xlsx": {
+      "mtime": 1768412928.4160018,
+      "size": 13306
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000024.xlsx": {
+      "mtime": 1768412928.6197941,
+      "size": 13498
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000025.xlsx": {
+      "mtime": 1768412928.8504837,
+      "size": 15293
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_23-160-000026.xlsx": {
+      "mtime": 1768412929.1493492,
+      "size": 18960
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000001.xlsx": {
+      "mtime": 1768412929.3697784,
+      "size": 14151
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000002.xlsx": {
+      "mtime": 1768412929.6710846,
+      "size": 22215
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000003.xlsx": {
+      "mtime": 1768412930.0479488,
+      "size": 29163
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000004.xlsx": {
+      "mtime": 1768422867.9607239,
+      "size": 25195
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000005.xlsx": {
+      "mtime": 1768412930.8343978,
+      "size": 36708
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000006.xlsx": {
+      "mtime": 1768412931.141259,
+      "size": 19231
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000007.xlsx": {
+      "mtime": 1768412931.42081,
+      "size": 18238
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000008.xlsx": {
+      "mtime": 1768428863.9618275,
+      "size": 34217
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000009.xlsx": {
+      "mtime": 1768412932.0553453,
+      "size": 14653
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000010.xlsx": {
+      "mtime": 1768412932.4006534,
+      "size": 25151
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000011.xlsx": {
+      "mtime": 1768412932.6892743,
+      "size": 18959
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000012.xlsx": {
+      "mtime": 1768412933.1331406,
+      "size": 34418
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000013.xlsx": {
+      "mtime": 1768425007.030141,
+      "size": 43790
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000014.xlsx": {
+      "mtime": 1768428849.891284,
+      "size": 35591
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000015.xlsx": {
+      "mtime": 1768412934.323311,
+      "size": 13650
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000016.xlsx": {
+      "mtime": 1768423429.207943,
+      "size": 18592
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000017.xlsx": {
+      "mtime": 1768412934.784664,
+      "size": 13450
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000018.xlsx": {
+      "mtime": 1768412935.0847213,
+      "size": 20273
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000019.xlsx": {
+      "mtime": 1768412935.3687496,
+      "size": 19814
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000020.xlsx": {
+      "mtime": 1768412935.883988,
+      "size": 43802
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000021.xlsx": {
+      "mtime": 1768429106.5081158,
+      "size": 25210
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000022.xlsx": {
+      "mtime": 1768412936.6598208,
+      "size": 34438
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000023.xlsx": {
+      "mtime": 1768412936.8636467,
+      "size": 13051
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000024.xlsx": {
+      "mtime": 1768412937.1723466,
+      "size": 20254
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000025.xlsx": {
+      "mtime": 1768412937.5448332,
+      "size": 28921
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000026.xlsx": {
+      "mtime": 1768412937.7810447,
+      "size": 15692
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000027.xlsx": {
+      "mtime": 1768412938.3371482,
+      "size": 48740
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000028.xlsx": {
+      "mtime": 1768412905.182821,
+      "size": 15676
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000029.xlsx": {
+      "mtime": 1768428966.9833572,
+      "size": 31175
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000030.xlsx": {
+      "mtime": 1768412906.14146,
+      "size": 31653
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000031.xlsx": {
+      "mtime": 1768423468.5169976,
+      "size": 75366
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_24-160-000032.xlsx": {
+      "mtime": 1768412907.532546,
+      "size": 31155
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000001.xlsx": {
+      "mtime": 1768412908.016824,
+      "size": 26128
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000002.xlsx": {
+      "mtime": 1768412908.700782,
+      "size": 54519
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000003.xlsx": {
+      "mtime": 1768412909.0948787,
+      "size": 14519
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000004.xlsx": {
+      "mtime": 1768412909.2940788,
+      "size": 13435
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000005.xlsx": {
+      "mtime": 1768412909.8368652,
+      "size": 34070
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000006.xlsx": {
+      "mtime": 1768412910.685393,
+      "size": 58188
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000007.xlsx": {
+      "mtime": 1768412911.1961179,
+      "size": 15313
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000008.xlsx": {
+      "mtime": 1768412911.8429685,
+      "size": 50244
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000009.xlsx": {
+      "mtime": 1768412912.4841921,
+      "size": 29351
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000010.xlsx": {
+      "mtime": 1768412912.8300061,
+      "size": 16073
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000011.xlsx": {
+      "mtime": 1768412913.5974634,
+      "size": 66877
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000012.xlsx": {
+      "mtime": 1768423494.1494806,
+      "size": 19212
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000013.xlsx": {
+      "mtime": 1768412914.139348,
+      "size": 14579
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000014.xlsx": {
+      "mtime": 1768412914.6338913,
+      "size": 40475
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000015.xlsx": {
+      "mtime": 1768412914.8516133,
+      "size": 13690
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000016.xlsx": {
+      "mtime": 1768412915.3929331,
+      "size": 44379
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000017.xlsx": {
+      "mtime": 1768412915.6411493,
+      "size": 14879
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000018.xlsx": {
+      "mtime": 1768412916.1923018,
+      "size": 40105
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\Kalkulacija maloprodajne cijene - FEMMA_25-160-000019.xlsx": {
+      "mtime": 1768412916.7990184,
+      "size": 39287
+    },
+    "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Kalkulacije\\manual_import.xlsx": {
+      "mtime": 1768425052.7445593,
+      "size": 5017
+    }
+  },
+  "kalk_last_offsets": {
+    "sku": 0,
+    "nabavna": 0,
+    "mpc_wo": 0,
+    "mpc_w": 0,
+    "pdv_rate": 0,
+    "kolicina": 0
+  }
+}
