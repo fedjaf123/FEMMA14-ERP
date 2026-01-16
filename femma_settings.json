@@ -528,5 +528,14 @@
     "mpc_w": 0,
     "pdv_rate": 0,
     "kolicina": 0
-  }
+  },
+  "izd_docs_root": "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\Dokumenti",
+  "izd_memo_path": "",
+  "izd_director": "Ema Hand\u017ear Faji",
+  "izd_json_path": "c:\\Users\\HOME\\Desktop\\FEMMA14.0\\FEMMA13.0\\nabavnecijene_kalkulacije.json",
+  "izd_recipient_types": [
+    "Influencer",
+    "Frizer",
+    "Ostalo"
+  ]
 }

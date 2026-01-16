@@ -10,13 +10,17 @@ import math
 import json
 import copy
 import unicodedata
+import textwrap
+import ctypes
+import msvcrt
 import numpy as np
 from datetime import datetime, date
 import xml.etree.ElementTree as ET
 import urllib.request
 import urllib.error
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk, simpledialog
+import tkinter.font as tkfont
 
 import customtkinter as ctk
 import pandas as pd
@@ -25,6 +29,11 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.styles import fills as fills_mod
 from openpyxl.chart import BarChart, Reference
+
+try:
+    from customtkinter.windows.widgets.theme import ThemeManager
+except Exception:
+    ThemeManager = None
 
 # -------------------------------------------------------------------------
 # GUI THEME
@@ -36,6 +45,172 @@ ctk.set_default_color_theme("dark-blue")
 ROSEGOLD = "#D4AF37"
 ROSEGOLD_DARK = "#B9962F"
 TEXT_MUTED = "#C8C8C8"
+UI_FONT_FAMILY = None
+
+
+def configure_ui_font(root):
+    """Postavi default font koji podrzava afrikate."""
+    global UI_FONT_FAMILY
+    candidates = ["Segoe UI", "Arial", "DejaVu Sans"]
+    for family in candidates:
+        try:
+            test = tkfont.Font(root=root, family=family, size=10)
+            if test.actual("family") == family:
+                chosen = family
+                break
+        except Exception:
+            continue
+    else:
+        chosen = None
+
+    if not chosen:
+        return
+
+    if ThemeManager and isinstance(ThemeManager.theme, dict):
+        ctk_font = ThemeManager.theme.get("CTkFont")
+        if isinstance(ctk_font, dict):
+            ctk_font["family"] = chosen
+
+    UI_FONT_FAMILY = chosen
+    for name in ("TkDefaultFont", "TkTextFont", "TkHeadingFont", "TkFixedFont"):
+        try:
+            tkfont.nametofont(name).configure(family=chosen)
+        except Exception:
+            continue
+
+
+def _ctk_font(size=12, weight="normal"):
+    if UI_FONT_FAMILY:
+        return ctk.CTkFont(family=UI_FONT_FAMILY, size=size, weight=weight)
+    return ctk.CTkFont(size=size, weight=weight)
+
+
+def normalize_text_nfc(value):
+    if isinstance(value, str):
+        return unicodedata.normalize("NFC", value)
+    return value
+
+
+def normalize_entry_input(event):
+    widget = getattr(event, "widget", None)
+    if widget is None:
+        return
+    cls = widget.winfo_class()
+    if cls not in {"Entry", "TEntry", "TCombobox", "CTkEntry"}:
+        return
+    try:
+        text = widget.get()
+    except Exception:
+        return
+    if not isinstance(text, str):
+        return
+    normalized = unicodedata.normalize("NFC", text)
+    if normalized == text:
+        return
+    try:
+        cursor = widget.index(tk.INSERT)
+    except Exception:
+        cursor = None
+    try:
+        widget.delete(0, "end")
+        widget.insert(0, normalized)
+    except Exception:
+        return
+    if cursor is not None:
+        try:
+            widget.icursor(cursor)
+        except Exception:
+            pass
+
+
+def _try_activate_keyboard_layout(layout_id):
+    try:
+        user32 = ctypes.windll.user32
+    except Exception:
+        return False
+    try:
+        hkl = user32.LoadKeyboardLayoutW(layout_id, 1)
+        if not hkl:
+            return False
+        user32.ActivateKeyboardLayout(hkl, 0)
+        return True
+    except Exception:
+        return False
+
+
+def force_balkan_keyboard_layout():
+    # Prefer Serbian (Latin), fallback to Bosnian/Croatian if available.
+    for layout_id in ("0000081A", "0000141A", "0000041A"):
+        if _try_activate_keyboard_layout(layout_id):
+            return True
+    return False
+
+
+_single_instance_lock = None
+
+
+def ensure_single_instance():
+    global _single_instance_lock
+    lock_path = os.path.join(app_base_dir(), "femma14.lock")
+    try:
+        lock_file = open(lock_path, "a+")
+    except Exception:
+        return True
+    try:
+        msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+    except Exception:
+        try:
+            tmp = tk.Tk()
+            tmp.withdraw()
+            messagebox.showerror("Greska", "Aplikacija je vec pokrenuta.")
+            tmp.destroy()
+        except Exception:
+            pass
+        try:
+            lock_file.close()
+        except Exception:
+            pass
+        return False
+    _single_instance_lock = lock_file
+    return True
+
+
+def _get_keyboard_layout_id():
+    try:
+        user32 = ctypes.windll.user32
+    except Exception:
+        return None
+    try:
+        hkl = user32.GetKeyboardLayout(0)
+        return hkl & 0xFFFF
+    except Exception:
+        return None
+
+
+def _map_balkan_keys(event):
+    widget = getattr(event, "widget", None)
+    if widget is None:
+        return
+    cls = widget.winfo_class()
+    if cls not in {"Entry", "TEntry", "CTkEntry"}:
+        return
+    if event.state & 0x0004 or event.state & 0x0008:  # Ctrl/Alt
+        return
+    layout = _get_keyboard_layout_id()
+    if layout in {0x081A, 0x141A, 0x041A}:
+        return
+    if event.keysym == "semicolon":
+        char = "Č" if (event.state & 0x0001) else "č"
+    elif event.keysym == "apostrophe":
+        char = "Ć" if (event.state & 0x0001) else "ć"
+    else:
+        return
+    try:
+        widget.insert(tk.INSERT, char)
+        return "break"
+    except Exception:
+        return
+
 
 # -------------------------------------------------------------------------
 # GLOBAL STATE
@@ -62,6 +237,16 @@ KALK_NABAVNE_BY_SKU = {}
 KALK_MPC_WO_BY_SKU = {}
 KALK_MPC_W_BY_SKU = {}
 KALK_VAT_BY_SKU = {}
+IZD_DOC_SUBFOLDERS = {
+    "MKT": "Izdavanje u marketing",
+    "OTP": "Otpis robe",
+}
+IZD_PURPOSE_TO_TYPE = {
+    "Izdavanje za marketing": "MKT",
+    "Otpis robe s greškom": "OTP",
+}
+DEFAULT_IZD_DIRECTOR = "Ema Handžar Fajić"
+DEFAULT_IZD_RECIPIENT_TYPES = ["Influencer", "Frizer", "Ostalo"]
 
 
 def _set_output_file_path(p):
@@ -144,6 +329,7 @@ def _default_promet_output_name(base_path: str | None):
         base = os.path.splitext(os.path.basename(base_path))[0]
         return f"{base}_promet_zaliha.xlsx"
     return "promet_zaliha.xlsx"
+
 
 # -------------------------------------------------------------------------
 # PODESAVANJA (DEFAULTI + UČITAVANJE)
@@ -356,6 +542,11 @@ def load_settings():
         "pdv_rate": 0,
         "kolicina": 0,
     }
+    izd_docs_root = os.path.join(app_base_dir(), "Dokumenti")
+    izd_memo_path = ""
+    izd_director = DEFAULT_IZD_DIRECTOR
+    izd_json_path = KALK_NABAVNE_PATH
+    izd_recipient_types = list(DEFAULT_IZD_RECIPIENT_TYPES)
 
     if os.path.exists(SETTINGS_PATH):
         try:
@@ -363,14 +554,14 @@ def load_settings():
                 data = json.load(f)
             prefix.update(_normalize_prefix_map(data.get("prefix_map")))
             custom_list = _normalize_sku_list(data.get("custom_skus", custom_list))
-            overrides = _normalize_overrides(data.get("sku_category_overrides", overrides))
+            overrides = _normalize_overrides(
+                data.get("sku_category_overrides", overrides)
+            )
             price_prefix.update(
                 _normalize_price_map(data.get("purchase_prices_by_prefix"))
             )
             price_sku = _normalize_price_map(data.get("purchase_price_overrides"))
-            mp_category_prices = _normalize_price_map(
-                data.get("mp_prices_by_category")
-            )
+            mp_category_prices = _normalize_price_map(data.get("mp_prices_by_category"))
             try:
                 usd_bam_rate = float(data.get("usd_bam_rate", usd_bam_rate))
             except Exception:
@@ -394,15 +585,11 @@ def load_settings():
             except Exception:
                 net_marketing_bam = net_marketing_bam
             try:
-                net_space_bam = float(
-                    data.get("net_margin_space_bam", net_space_bam)
-                )
+                net_space_bam = float(data.get("net_margin_space_bam", net_space_bam))
             except Exception:
                 net_space_bam = net_space_bam
             try:
-                net_labor_bam = float(
-                    data.get("net_margin_labor_bam", net_labor_bam)
-                )
+                net_labor_bam = float(data.get("net_margin_labor_bam", net_labor_bam))
             except Exception:
                 net_labor_bam = net_labor_bam
             try:
@@ -433,6 +620,28 @@ def load_settings():
                 )
             except Exception:
                 kalk_last_offsets = kalk_last_offsets
+            try:
+                izd_docs_root = str(data.get("izd_docs_root", izd_docs_root))
+            except Exception:
+                izd_docs_root = izd_docs_root
+            try:
+                izd_memo_path = str(data.get("izd_memo_path", izd_memo_path))
+            except Exception:
+                izd_memo_path = izd_memo_path
+            try:
+                izd_director = str(data.get("izd_director", izd_director))
+            except Exception:
+                izd_director = izd_director
+            try:
+                izd_json_path = str(data.get("izd_json_path", izd_json_path))
+            except Exception:
+                izd_json_path = izd_json_path
+            try:
+                izd_recipient_types = list(
+                    data.get("izd_recipient_types", izd_recipient_types)
+                )
+            except Exception:
+                izd_recipient_types = izd_recipient_types
         except Exception as e:
             print(f"Upozorenje: ne mogu ucitati {SETTINGS_PATH}: {e}")
 
@@ -454,6 +663,11 @@ def load_settings():
         kalk_folder,
         kalk_processed_files,
         kalk_last_offsets,
+        izd_docs_root,
+        izd_memo_path,
+        izd_director,
+        izd_json_path,
+        izd_recipient_types,
     )
 
 
@@ -476,6 +690,11 @@ def save_settings():
         "kalkulacije_folder": kalkulacije_folder,
         "kalk_processed_files": KALK_PROCESSED_FILES,
         "kalk_last_offsets": KALK_LAST_OFFSETS,
+        "izd_docs_root": izd_docs_root,
+        "izd_memo_path": izd_memo_path,
+        "izd_director": izd_director_default,
+        "izd_json_path": izd_json_path,
+        "izd_recipient_types": izd_recipient_types,
     }
     try:
         with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
@@ -525,6 +744,11 @@ def read_meta_tmp():
     kalkulacije_folder,
     KALK_PROCESSED_FILES,
     KALK_LAST_OFFSETS,
+    izd_docs_root,
+    izd_memo_path,
+    izd_director_default,
+    izd_json_path,
+    izd_recipient_types,
 ) = load_settings()
 if prefix_map.get("PR") == "Perike":
     prefix_map["PR"] = "Premium perike"
@@ -532,7 +756,10 @@ if prefix_map.get("P0") == "Perike P0":
     prefix_map["P0"] = "Klasične perike"
 if "Perike" in MP_PRICE_BY_CATEGORY and "Premium perike" not in MP_PRICE_BY_CATEGORY:
     MP_PRICE_BY_CATEGORY["Premium perike"] = MP_PRICE_BY_CATEGORY["Perike"]
-if "Perike P0" in MP_PRICE_BY_CATEGORY and "Klasične perike" not in MP_PRICE_BY_CATEGORY:
+if (
+    "Perike P0" in MP_PRICE_BY_CATEGORY
+    and "Klasične perike" not in MP_PRICE_BY_CATEGORY
+):
     MP_PRICE_BY_CATEGORY["Klasične perike"] = MP_PRICE_BY_CATEGORY["Perike P0"]
 CUSTOM_SKU_SET = {s.upper() for s in CUSTOM_SKU_LIST}
 
@@ -563,6 +790,8 @@ def save_mp_cjenovnik():
             json.dump(data, f, indent=2, ensure_ascii=True)
     except Exception as e:
         messagebox.showerror("Greska", f"Ne mogu sacuvati mp_cjenovnik.json: {e}")
+
+
 # -------------------------------------------------------------------------
 # TEŽINE PO PREFIKSIMA (grami)
 # -------------------------------------------------------------------------
@@ -776,7 +1005,9 @@ def parse_calc_excel_to_rows(
     )
 
 
-def parse_calc_df_to_rows(df, excel_path: str, vat_default: float = 17.0, col_offsets=None):
+def parse_calc_df_to_rows(
+    df, excel_path: str, vat_default: float = 17.0, col_offsets=None
+):
     mask_ident = df.apply(
         lambda row: row.astype(str).str.contains("Ident", case=False, na=False),
         axis=1,
@@ -838,21 +1069,15 @@ def parse_calc_df_to_rows(df, excel_path: str, vat_default: float = 17.0, col_of
     col_name = find_col(header_row, "naziv", contains=True)
     col_kolicina = find_col(header_row, "kolicina", contains=True)
     col_pdv_rate = find_col(header_row, "pdv %", from_right=True)
-    col_prod_cijena_s_pdv = find_col(
-        header_row, "prod. cijena s pdv", contains=True
-    )
+    col_prod_cijena_s_pdv = find_col(header_row, "prod. cijena s pdv", contains=True)
     if col_prod_cijena_s_pdv is None:
-        col_prod_cijena_s_pdv = find_col(
-            header_row, "cijena s pdv", contains=True
-        )
+        col_prod_cijena_s_pdv = find_col(header_row, "cijena s pdv", contains=True)
     if col_prod_cijena_s_pdv is None:
         col_prod_cijena_s_pdv = find_col(
             header_row, "prodajna cijena s pdv", contains=True
         )
     if col_prod_cijena_s_pdv is None:
-        col_prod_cijena_s_pdv = find_col(
-            header_row, "cijena sa pdv", contains=True
-        )
+        col_prod_cijena_s_pdv = find_col(header_row, "cijena sa pdv", contains=True)
     if col_prod_cijena_s_pdv is None:
         col_prod_cijena_s_pdv = find_col(
             header_row, "prod. cijena sa pdv", contains=True
@@ -861,9 +1086,7 @@ def parse_calc_df_to_rows(df, excel_path: str, vat_default: float = 17.0, col_of
         header_row, "prod. cijena bez pdv", contains=True
     )
     if col_prod_cijena_bez_pdv is None:
-        col_prod_cijena_bez_pdv = find_col(
-            header_row, "cijena bez pdv", contains=True
-        )
+        col_prod_cijena_bez_pdv = find_col(header_row, "cijena bez pdv", contains=True)
     if col_prod_cijena_bez_pdv is None:
         col_prod_cijena_bez_pdv = find_col(
             header_row, "prodajna cijena bez pdv", contains=True
@@ -911,7 +1134,9 @@ def parse_calc_df_to_rows(df, excel_path: str, vat_default: float = 17.0, col_of
         col_prod_cijena_bez_pdv, offsets.get("mpc_wo"), keyword="bez pdv"
     )
     col_pdv_rate = apply_offset(col_pdv_rate, offsets.get("pdv_rate"), keyword="pdv %")
-    col_kolicina = apply_offset(col_kolicina, offsets.get("kolicina"), keyword="kolicina")
+    col_kolicina = apply_offset(
+        col_kolicina, offsets.get("kolicina"), keyword="kolicina"
+    )
 
     def try_get_number(value):
         if value is None:
@@ -930,9 +1155,7 @@ def parse_calc_df_to_rows(df, excel_path: str, vat_default: float = 17.0, col_of
 
     basename = os.path.basename(excel_path)
     doc_no = os.path.splitext(basename)[0]
-    doc_date = datetime.fromtimestamp(os.path.getmtime(excel_path)).strftime(
-        "%Y-%m-%d"
-    )
+    doc_date = datetime.fromtimestamp(os.path.getmtime(excel_path)).strftime("%Y-%m-%d")
 
     rows_out = []
     all_block_bounds = header_indices + [len(df)]
@@ -969,7 +1192,11 @@ def parse_calc_df_to_rows(df, excel_path: str, vat_default: float = 17.0, col_of
                     continue
             name_raw = row[col_name] if col_name is not None else None
             if not name:
-                name = "" if (name_raw is None or pd.isna(name_raw)) else str(name_raw).strip()
+                name = (
+                    ""
+                    if (name_raw is None or pd.isna(name_raw))
+                    else str(name_raw).strip()
+                )
 
             qty = None
             if col_kolicina is not None:
@@ -1016,12 +1243,20 @@ def parse_calc_df_to_rows(df, excel_path: str, vat_default: float = 17.0, col_of
             sale_no_vat = None
             if col_prod_cijena_bez_pdv is not None:
                 sale_no_vat = try_get_number(row[col_prod_cijena_bez_pdv])
-            if sale_no_vat is None and sale_with_vat is not None and vat_rate is not None:
+            if (
+                sale_no_vat is None
+                and sale_with_vat is not None
+                and vat_rate is not None
+            ):
                 try:
                     sale_no_vat = round(sale_with_vat / (1.0 + vat_rate / 100.0), 4)
                 except ZeroDivisionError:
                     sale_no_vat = None
-            if sale_with_vat is None and sale_no_vat is not None and vat_rate is not None:
+            if (
+                sale_with_vat is None
+                and sale_no_vat is not None
+                and vat_rate is not None
+            ):
                 try:
                     sale_with_vat = round(sale_no_vat * (1.0 + vat_rate / 100.0), 4)
                 except ZeroDivisionError:
@@ -1073,6 +1308,7 @@ def find_excel_files(root_dir):
         for name in filenames:
             if name.lower().endswith(".xlsx"):
                 excel_files.append(os.path.join(dirpath, name))
+
     def _natural_key(path):
         base = os.path.basename(path).lower()
         parts = re.split(r"(\d+)", base)
@@ -1371,9 +1607,11 @@ def _kalk_finalize_and_write(sku_data, out_path):
             "count_mpc_w": sd.get("count_mpc_w", 0),
             "count_vat": sd.get("count_vat", 0),
             "last_doc_no": sd.get("last_doc_no", ""),
-            "last_doc_date": sd["last_doc_date"].isoformat()
-            if isinstance(sd.get("last_doc_date"), date)
-            else "",
+            "last_doc_date": (
+                sd["last_doc_date"].isoformat()
+                if isinstance(sd.get("last_doc_date"), date)
+                else ""
+            ),
             "last_file_name": sd.get("last_file_name", ""),
             "last_mpc_wo": float(f"{sd.get('last_mpc_wo', 0.0):.6f}"),
             "last_mpc_w": float(f"{sd.get('last_mpc_w', 0.0):.6f}"),
@@ -1574,6 +1812,406 @@ def calc_kalk_qty_stats(kalk_folder):
 ensure_kalk_nabavne_loaded(kalkulacije_folder)
 
 
+# -------------------------------------------------------------------------
+# IZDAVANJE / OTPIS - PODACI I PDF
+# -------------------------------------------------------------------------
+
+IZD_PRICE_DATA = {}
+IZD_SKU_LIST = []
+
+
+def izd_refresh_doc_no():
+    # Placeholder assigned in build_izdavanje_page
+    pass
+
+
+def _normalize_vat_rate(rate_val):
+    rate = safe_float(rate_val, 0.0)
+    if rate > 1.0:
+        if rate > 100.0:
+            return 0.17
+        return rate / 100.0
+    if rate <= 0:
+        return 0.17
+    return rate
+
+
+def _izd_get_doc_type(purpose_text):
+    return IZD_PURPOSE_TO_TYPE.get(purpose_text, "MKT")
+
+
+def _izd_doc_root():
+    return izd_docs_root or os.path.join(app_base_dir(), "Dokumenti")
+
+
+def _izd_doc_folder(doc_type, year_val):
+    year_str = str(year_val)
+    doc_root = _izd_doc_root()
+    sub = IZD_DOC_SUBFOLDERS.get(doc_type, doc_type)
+    path = os.path.join(doc_root, year_str, sub)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def _izd_parse_existing_doc_numbers(doc_type, year_val):
+    year_str = str(year_val)
+    doc_dir = _izd_doc_folder(doc_type, year_str)
+    if not os.path.isdir(doc_dir):
+        return []
+    numbers = []
+    for fn in os.listdir(doc_dir):
+        base = os.path.splitext(fn)[0]
+        if doc_type == "OTP":
+            m = re.search(r"OTP[-_ ]*(\\d+)[-/](\\d{4})", base, re.IGNORECASE)
+        else:
+            m = re.search(r"MKT[-_ ]*(\\d+)[-_ ]*(\\d{4})", base, re.IGNORECASE)
+        if not m:
+            continue
+        num = safe_float(m.group(1), 0)
+        yr = m.group(2)
+        if yr == year_str and num > 0:
+            numbers.append(int(num))
+    return numbers
+
+
+def _izd_next_doc_no(doc_type, year_val):
+    numbers = _izd_parse_existing_doc_numbers(doc_type, year_val)
+    next_num = max(numbers) + 1 if numbers else 1
+    if doc_type == "OTP":
+        return f"OTP-{next_num:02d}-{year_val}"
+    return f"MKT-{next_num:02d}-{year_val}"
+
+
+def _izd_safe_filename(doc_type, doc_no):
+    doc_no = (doc_no or "").strip()
+    if not doc_no:
+        doc_no = "bez-broja"
+    safe = re.sub(r"[\\\\/:*?\"<>|]", "-", doc_no)
+    safe = safe.replace("/", "-").replace("\\", "-")
+    if safe.upper().startswith(doc_type):
+        return f"{safe}.pdf"
+    return f"{doc_type}-{safe}.pdf"
+
+
+def _izd_load_price_source(path_val):
+    path_val = path_val or KALK_NABAVNE_PATH
+    data = {}
+    name_map = {}
+    if os.path.exists(path_val):
+        try:
+            with open(path_val, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+        except Exception:
+            raw = {}
+        items = raw.get("items") if isinstance(raw, dict) else None
+        if not isinstance(items, dict):
+            items = raw if isinstance(raw, dict) else {}
+        for sku, item in items.items():
+            key = str(sku).strip().upper()
+            if not key:
+                continue
+            if isinstance(item, dict):
+                name_val = (
+                    item.get("naziv") or item.get("name") or item.get("name_hint") or ""
+                )
+                data[key] = {
+                    "nab": safe_float(
+                        item.get("avg_nabavna", item.get("nabavna_cijena", 0.0)), 0.0
+                    ),
+                    "mpc_w": safe_float(
+                        item.get("avg_mpc_w_vat", item.get("last_mpc_w", 0.0)), 0.0
+                    ),
+                    "vat_rate": safe_float(
+                        item.get("avg_vat_rate", item.get("last_vat_rate", 0.0)), 0.0
+                    ),
+                    "name": str(name_val).strip(),
+                }
+                if data[key]["name"]:
+                    name_map[key] = data[key]["name"]
+            else:
+                data[key] = {
+                    "nab": safe_float(item, 0.0),
+                    "mpc_w": 0.0,
+                    "vat_rate": 0.0,
+                    "name": "",
+                }
+    if path_val == KALK_NABAVNE_PATH:
+        for sku in KALK_NABAVNE_BY_SKU.keys() | KALK_MPC_W_BY_SKU.keys():
+            key = str(sku).strip().upper()
+            if not key:
+                continue
+            entry = data.setdefault(
+                key, {"nab": 0.0, "mpc_w": 0.0, "vat_rate": 0.0, "name": ""}
+            )
+            if entry["nab"] <= 0:
+                entry["nab"] = safe_float(KALK_NABAVNE_BY_SKU.get(key), 0.0)
+            if entry["mpc_w"] <= 0:
+                entry["mpc_w"] = safe_float(KALK_MPC_W_BY_SKU.get(key), 0.0)
+            if entry["vat_rate"] <= 0:
+                entry["vat_rate"] = safe_float(KALK_VAT_BY_SKU.get(key), 0.0)
+            if key in name_map and not entry.get("name"):
+                entry["name"] = name_map[key]
+    for sku, price in mp_cijene.items():
+        key = str(sku).strip().upper()
+        if not key:
+            continue
+        entry = data.setdefault(
+            key, {"nab": 0.0, "mpc_w": 0.0, "vat_rate": 0.0, "name": ""}
+        )
+        if entry["mpc_w"] <= 0:
+            entry["mpc_w"] = safe_float(price, 0.0)
+    return data
+
+
+def _izd_refresh_price_data():
+    global IZD_PRICE_DATA, IZD_SKU_LIST
+    IZD_PRICE_DATA = _izd_load_price_source(izd_json_path)
+    IZD_SKU_LIST = sorted(IZD_PRICE_DATA.keys())
+
+
+def _izd_find_matches(query, limit=50):
+    q = str(query or "").strip().upper()
+    if not q:
+        return []
+    matches = []
+    for sku in IZD_SKU_LIST:
+        name = str(IZD_PRICE_DATA.get(sku, {}).get("name", "")).upper()
+        if q in sku or (name and q in name):
+            matches.append(sku)
+            if len(matches) >= limit:
+                return matches
+    return matches
+
+
+def _izd_get_item_data(sku):
+    key = str(sku or "").strip().upper()
+    if not key:
+        return None
+    entry = IZD_PRICE_DATA.get(key)
+    if not entry:
+        return None
+    name_val = entry.get("name") or key
+    nab = safe_float(entry.get("nab"), 0.0)
+    mpc_w = safe_float(entry.get("mpc_w"), 0.0)
+    vat_rate = _normalize_vat_rate(entry.get("vat_rate"))
+    return {
+        "sku": key,
+        "name": name_val,
+        "nab": nab,
+        "mpc_w": mpc_w,
+        "vat_rate": vat_rate,
+    }
+
+
+def _izd_merge_with_memorandum(tmp_pdf, out_pdf, memo_path):
+    if not memo_path or not os.path.exists(memo_path):
+        try:
+            os.replace(tmp_pdf, out_pdf)
+        except Exception:
+            with open(tmp_pdf, "rb") as f_src, open(out_pdf, "wb") as f_dst:
+                f_dst.write(f_src.read())
+        return
+    try:
+        from pypdf import PdfReader, PdfWriter
+    except Exception as e:
+        raise RuntimeError(f"Nedostaje pypdf: {e}")
+    try:
+        reader_bg = PdfReader(memo_path)
+        reader_doc = PdfReader(tmp_pdf)
+    except Exception as e:
+        raise RuntimeError(f"Ne mogu otvoriti PDF datoteke: {e}")
+    writer = PdfWriter()
+    bg_page = reader_bg.pages[0]
+    for page in reader_doc.pages:
+        new_page = bg_page.clone()
+        new_page.merge_page(page)
+        writer.add_page(new_page)
+    with open(out_pdf, "wb") as f:
+        writer.write(f)
+
+
+def _izd_register_fonts():
+    try:
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+    except Exception as e:
+        raise RuntimeError(f"Nedostaje reportlab: {e}")
+    win_fonts = os.path.join(os.environ.get("WINDIR", "C:\\\\Windows"), "Fonts")
+    candidates = [
+        ("segoeui.ttf", "segoeuib.ttf"),
+        ("arial.ttf", "arialbd.ttf"),
+        ("dejavusans.ttf", "dejavusans-bold.ttf"),
+    ]
+    for reg_name, bold_name in candidates:
+        regular = os.path.join(win_fonts, reg_name)
+        bold = os.path.join(win_fonts, bold_name)
+        if not os.path.exists(regular):
+            continue
+        pdfmetrics.registerFont(TTFont("FemmaRegular", regular))
+        if os.path.exists(bold):
+            pdfmetrics.registerFont(TTFont("FemmaBold", bold))
+        else:
+            pdfmetrics.registerFont(TTFont("FemmaBold", regular))
+        return "FemmaRegular", "FemmaBold"
+    return "Helvetica", "Helvetica-Bold"
+
+
+def _izd_draw_table_header(c, y, bold_font):
+    from reportlab.lib.units import mm
+
+    c.setFont(bold_font, 10)
+    c.drawString(20 * mm, y, "SKU")
+    c.drawString(50 * mm, y, "Naziv")
+    c.drawRightString(115 * mm, y, "Kol.")
+    c.drawRightString(135 * mm, y, "Nab.")
+    c.drawRightString(155 * mm, y, "PDV")
+    c.drawRightString(180 * mm, y, "MPC")
+    c.drawRightString(200 * mm, y, "PDV")
+
+
+def _izd_generate_pdf(doc_path, data, memo_path):
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import mm
+        from reportlab.pdfgen import canvas
+    except Exception as e:
+        raise RuntimeError(f"Nedostaje reportlab: {e}")
+
+    regular_font, bold_font = _izd_register_fonts()
+    tmp_pdf = doc_path + ".tmp.pdf"
+
+    c = canvas.Canvas(tmp_pdf, pagesize=A4)
+    A4_W, A4_H = A4
+
+    top_margin = A4_H - 45 * mm
+    left = 20 * mm
+    line_h = 6 * mm
+
+    c.setFont(bold_font, 15)
+    if data.get("doc_type") == "OTP":
+        title = f"OTPIS ROBE S GREŠKOM Br: {data.get('doc_no','')}"
+    else:
+        title = f"IZDAVANJE U MARKETINŠKE SVRHE Br: {data.get('doc_no','')}"
+    c.drawCentredString(A4_W / 2, top_margin, title)
+
+    y = top_margin - 12 * mm
+    c.setFont(regular_font, 11)
+    c.drawString(left, y, f"Datum: {data.get('date_str','')}")
+    y -= 8 * mm
+
+    nab_total = data.get("totals", {}).get("total_nab", 0.0)
+    nab_pdv = data.get("totals", {}).get("total_nab_pdv", 0.0)
+    mpc_total = data.get("totals", {}).get("total_mpc_w", 0.0)
+    mpc_pdv = data.get("totals", {}).get("total_mpc_pdv", 0.0)
+
+    if data.get("doc_type") == "OTP":
+        reason = data.get("reason_text", "").strip()
+        txt = (
+            f"Direktor društva odobrava otpis robe zbog {reason}, "
+            f"nabavne vrijednosti {nab_total:.2f} KM + PDV {nab_pdv:.2f} KM "
+            f"i {mpc_total:.2f} KM + {mpc_pdv:.2f} KM."
+        )
+        txt2 = "Roba će biti uskladištena u prostorijama preduzeća do njegovog uništavanja."
+        lines = textwrap.wrap(txt, width=95)
+        for line in lines:
+            c.drawString(left, y, line)
+            y -= line_h
+        y -= 4 * mm
+        for line in textwrap.wrap(txt2, width=95):
+            c.drawString(left, y, line)
+            y -= line_h
+    else:
+        recipient = data.get("recipient", "").strip()
+        r_type = data.get("recipient_type", "").strip()
+        txt = (
+            f'Direktor Društva odobrava izdavanje robe za "{recipient}" {r_type}, ukupne '
+            f"nabavne vrijednosti {nab_total:.2f} KM + PDV {nab_pdv:.2f} KM i ukupne "
+            f"maloprodajne vrijednosti {mpc_total:.2f} KM + {mpc_pdv:.2f} KM."
+        )
+        txt2 = (
+            f"Navedeni {r_type} ima saradnju sa više estradnih ličnosti i/ili veliku mrežu pratitelja "
+            f"na društvenim mrežama te će proizvode koristiti za promociju našeg brenda te "
+            f"time povećati prisutnost brenda u medijima (nastupi, spotovi i sl.)."
+        )
+        for line in textwrap.wrap(txt, width=95):
+            c.drawString(left, y, line)
+            y -= line_h
+        y -= 4 * mm
+        for line in textwrap.wrap(txt2, width=95):
+            c.drawString(left, y, line)
+            y -= line_h
+
+    c.setFont(regular_font, 11)
+    c.drawString(120 * mm, 55 * mm, "Direktor:")
+    c.line(120 * mm, 48 * mm, 190 * mm, 48 * mm)
+    c.drawString(120 * mm, 40 * mm, data.get("director", ""))
+
+    c.showPage()
+    c.setFont(bold_font, 15)
+    c.drawCentredString(A4_W / 2, top_margin, "SPECIFIKACIJA ROBE")
+
+    y = top_margin - 12 * mm
+    _izd_draw_table_header(c, y, bold_font)
+    y -= 6 * mm
+
+    c.setFont(regular_font, 10)
+    for it in data.get("items", []):
+        if y < 35 * mm:
+            c.showPage()
+            c.setFont(bold_font, 15)
+            c.drawCentredString(A4_W / 2, top_margin, "SPECIFIKACIJA ROBE")
+            y = top_margin - 12 * mm
+            _izd_draw_table_header(c, y, bold_font)
+            y -= 6 * mm
+            c.setFont(regular_font, 10)
+        c.drawString(20 * mm, y, it["sku"])
+        c.drawString(50 * mm, y, it["name"])
+        c.drawRightString(115 * mm, y, f"{it['qty']:.2f}".rstrip("0").rstrip("."))
+        c.drawRightString(135 * mm, y, f"{it['nab']:.2f}")
+        c.drawRightString(155 * mm, y, f"{it['nab_pdv']:.2f}")
+        c.drawRightString(180 * mm, y, f"{it['mpc']:.2f}")
+        c.drawRightString(200 * mm, y, f"{it['mpc_pdv']:.2f}")
+        y -= 6 * mm
+
+    y -= 8 * mm
+    c.setFont(bold_font, 11)
+    totals = data.get("totals", {})
+    c.drawRightString(
+        200 * mm, y, f"Ukupno nabavna vrijednost: {totals.get('total_nab',0):.2f} KM"
+    )
+    y -= 6 * mm
+    c.drawRightString(
+        200 * mm,
+        y,
+        f"Ukupno PDV po nabavnoj vrijednosti: {totals.get('total_nab_pdv',0):.2f} KM",
+    )
+    y -= 6 * mm
+    c.drawRightString(
+        200 * mm,
+        y,
+        f"Ukupno maloprodajna vrijednost: {totals.get('total_mpc_w',0):.2f} KM",
+    )
+    y -= 6 * mm
+    c.drawRightString(
+        200 * mm,
+        y,
+        f"Ukupno PDV po maloprodajnoj vrijednosti: {totals.get('total_mpc_pdv',0):.2f} KM",
+    )
+
+    y -= 12 * mm
+    c.setFont(regular_font, 10)
+    c.drawRightString(180 * mm, y, "Direktor:")
+    c.line(150 * mm, y - 4 * mm, 200 * mm, y - 4 * mm)
+    c.drawRightString(180 * mm, y - 10 * mm, data.get("director", ""))
+
+    c.save()
+    _izd_merge_with_memorandum(tmp_pdf, doc_path, memo_path)
+    try:
+        os.remove(tmp_pdf)
+    except Exception:
+        pass
+
+
 def ensure_default_fills(wb) -> None:
     """Ensure Excel default fills include gray125 to avoid dotted pattern."""
     fills = getattr(wb, "_fills", None)
@@ -1727,8 +2365,12 @@ def parse_promet_df_to_rows(df, kind: str, col_offsets=None, add_vat=True):
             for w in keywords:
                 w_norm = w.lower()
                 w_comp = w_norm.replace(".", "").replace(" ", "")
-                orig_match = (w_norm in orig_h) or (w_comp and w_comp in orig_h.replace(".", "").replace(" ", ""))
-                tgt_match = (w_norm in tgt_h) or (w_comp and w_comp in tgt_h.replace(".", "").replace(" ", ""))
+                orig_match = (w_norm in orig_h) or (
+                    w_comp and w_comp in orig_h.replace(".", "").replace(" ", "")
+                )
+                tgt_match = (w_norm in tgt_h) or (
+                    w_comp and w_comp in tgt_h.replace(".", "").replace(" ", "")
+                )
                 if orig_match and not tgt_match:
                     return col
         return col_list[new_pos]
@@ -1748,15 +2390,27 @@ def parse_promet_df_to_rows(df, kind: str, col_offsets=None, add_vat=True):
         )
         col_vrijednost = find_col_any(header_row, ["vrijednost", "iznos"])
 
-        col_sifra = apply_offset(col_sifra, offsets.get("sifra"), keywords=["sifra", "ident", "sifra dobavljaca"])
+        col_sifra = apply_offset(
+            col_sifra,
+            offsets.get("sifra"),
+            keywords=["sifra", "ident", "sifra dobavljaca"],
+        )
         if kind == "sales":
-            col_kolicina = apply_offset(col_kolicina, offsets.get("kolicina"), keywords=["kolicina"])
+            col_kolicina = apply_offset(
+                col_kolicina, offsets.get("kolicina"), keywords=["kolicina"]
+            )
         else:
-            col_stanje = apply_offset(col_stanje, offsets.get("stanje"), keywords=["stanje", "zaliha"])
-        col_vrijednost = apply_offset(col_vrijednost, offsets.get("vrijednost"), keywords=["vrijednost", "iznos"])
+            col_stanje = apply_offset(
+                col_stanje, offsets.get("stanje"), keywords=["stanje", "zaliha"]
+            )
+        col_vrijednost = apply_offset(
+            col_vrijednost, offsets.get("vrijednost"), keywords=["vrijednost", "iznos"]
+        )
 
-        if col_sifra is None or (kind == "sales" and col_kolicina is None) or (
-            kind != "sales" and col_stanje is None
+        if (
+            col_sifra is None
+            or (kind == "sales" and col_kolicina is None)
+            or (kind != "sales" and col_stanje is None)
         ):
             return False, "Fale kljucne kolone (Sifra i Kolicina/Stanje).", []
 
@@ -1849,7 +2503,8 @@ def parse_promet_df_to_rows(df, kind: str, col_offsets=None, add_vat=True):
                     if header_val and exclude_keywords:
                         header_comp = header_val.replace(".", "").replace(" ", "")
                         if any(
-                            (k in header_val) or (k.replace(".", "").replace(" ", "") in header_comp)
+                            (k in header_val)
+                            or (k.replace(".", "").replace(" ", "") in header_comp)
                             for k in exclude_keywords
                         ):
                             continue
@@ -1862,12 +2517,31 @@ def parse_promet_df_to_rows(df, kind: str, col_offsets=None, add_vat=True):
         if kind != "sales":
             col_stanje = pick_best_numeric_col(
                 col_stanje,
-                exclude_keywords=["vrijednost", "iznos", "cijena", "mp", "m.p", "mpcijena", "pdv", "valuta"],
+                exclude_keywords=[
+                    "vrijednost",
+                    "iznos",
+                    "cijena",
+                    "mp",
+                    "m.p",
+                    "mpcijena",
+                    "pdv",
+                    "valuta",
+                ],
                 allow_header=True,
             )
             col_vrijednost = pick_best_numeric_col(
                 col_vrijednost,
-                exclude_keywords=["zaliha", "stanje", "kolicina", "mj", "valuta", "mp", "m.p", "mpcijena", "cijena"],
+                exclude_keywords=[
+                    "zaliha",
+                    "stanje",
+                    "kolicina",
+                    "mj",
+                    "valuta",
+                    "mp",
+                    "m.p",
+                    "mpcijena",
+                    "cijena",
+                ],
                 allow_header=False,
                 prefer="right",
             )
@@ -2011,7 +2685,10 @@ def show_promet_review(path, kind: str):
 
     active_sheet = tk.StringVar(value=sheet_names[0]) if sheet_names else None
     offsets_by_sheet = (
-        {name: {"sifra": 0, "kolicina": 0, "stanje": 0, "vrijednost": 0} for name in sheet_names}
+        {
+            name: {"sifra": 0, "kolicina": 0, "stanje": 0, "vrijednost": 0}
+            for name in sheet_names
+        }
         if sheet_names
         else {0: {"sifra": 0, "kolicina": 0, "stanje": 0, "vrijednost": 0}}
     )
@@ -2022,7 +2699,9 @@ def show_promet_review(path, kind: str):
         return active_sheet.get() if active_sheet else 0
 
     top = ctk.CTkToplevel(parent)
-    title = "Provjera ukupne prodaje" if kind == "sales" else "Provjera trenutnog stanja"
+    title = (
+        "Provjera ukupne prodaje" if kind == "sales" else "Provjera trenutnog stanja"
+    )
     top.title(title)
     top.geometry("980x640")
     top.grab_set()
@@ -2048,9 +2727,7 @@ def show_promet_review(path, kind: str):
     if sheet_names and len(sheet_names) > 1:
         sheet_frame = ctk.CTkFrame(top)
         sheet_frame.pack(fill="x", padx=10, pady=(0, 6))
-        ctk.CTkLabel(sheet_frame, text="Sheet:").pack(
-            side="left", padx=(10, 6), pady=6
-        )
+        ctk.CTkLabel(sheet_frame, text="Sheet:").pack(side="left", padx=(10, 6), pady=6)
         sheet_combo = ctk.CTkComboBox(
             sheet_frame, values=sheet_names, width=200, variable=active_sheet
         )
@@ -2116,7 +2793,12 @@ def show_promet_review(path, kind: str):
         side="left", padx=(10, 6), pady=6
     )
     field_options = [("Sifra", "sifra")]
-    field_options.append(("Kolicina" if kind == "sales" else "Stanje", "kolicina" if kind == "sales" else "stanje"))
+    field_options.append(
+        (
+            "Kolicina" if kind == "sales" else "Stanje",
+            "kolicina" if kind == "sales" else "stanje",
+        )
+    )
     field_options.append(("Vrijednost", "vrijednost"))
     field_labels = [label for label, _ in field_options]
     field_map = {label: key for label, key in field_options}
@@ -2127,12 +2809,13 @@ def show_promet_review(path, kind: str):
     )
     field_combo.pack(side="left", padx=6, pady=6)
 
-    ctk.CTkLabel(move_frame, text="Korak:").pack(
-        side="left", padx=(10, 6), pady=6
-    )
+    ctk.CTkLabel(move_frame, text="Korak:").pack(side="left", padx=(10, 6), pady=6)
     step_var = tk.StringVar(value="1")
     step_combo = ctk.CTkComboBox(
-        move_frame, values=["1", "2", "5", "10", "25", "50", "100"], width=70, variable=step_var
+        move_frame,
+        values=["1", "2", "5", "10", "25", "50", "100"],
+        width=70,
+        variable=step_var,
     )
     step_combo.pack(side="left", padx=6, pady=6)
 
@@ -2154,7 +2837,9 @@ def show_promet_review(path, kind: str):
         updating_vars["active"] = False
 
     def update_offsets_from_vars():
-        offsets = offsets_by_sheet.setdefault(active_key(), {"sifra": 0, "kolicina": 0, "stanje": 0, "vrijednost": 0})
+        offsets = offsets_by_sheet.setdefault(
+            active_key(), {"sifra": 0, "kolicina": 0, "stanje": 0, "vrijednost": 0}
+        )
         offsets["sifra"] = offset_map.get(var_sifra.get(), 0)
         if kind == "sales":
             offsets["kolicina"] = offset_map.get(var_qty.get(), 0)
@@ -2187,14 +2872,23 @@ def show_promet_review(path, kind: str):
     btn_right.pack(side="left", padx=6, pady=6)
 
     def reset_offsets_current_sheet():
-        offsets_by_sheet[active_key()] = {"sifra": 0, "kolicina": 0, "stanje": 0, "vrijednost": 0}
+        offsets_by_sheet[active_key()] = {
+            "sifra": 0,
+            "kolicina": 0,
+            "stanje": 0,
+            "vrijednost": 0,
+        }
         set_vars_from_offsets(offsets_by_sheet[active_key()])
         update_offsets_from_vars()
         refresh_preview()
         update_confirm_label()
 
     btn_reset = ctk.CTkButton(
-        move_frame, text="Resetuj offsete", fg_color="#555555", hover_color="#444444", command=reset_offsets_current_sheet
+        move_frame,
+        text="Resetuj offsete",
+        fg_color="#555555",
+        hover_color="#444444",
+        command=reset_offsets_current_sheet,
     )
     btn_reset.pack(side="left", padx=6, pady=6)
 
@@ -2241,7 +2935,10 @@ def show_promet_review(path, kind: str):
                 error_label.configure(text=f"Greska pri citanju sheeta: {e}")
                 return
             ok, msg, rows_new = parse_promet_df_to_rows(
-                df_sheet, kind, col_offsets=offsets_by_sheet.get(sheet_key), add_vat=True
+                df_sheet,
+                kind,
+                col_offsets=offsets_by_sheet.get(sheet_key),
+                add_vat=True,
             )
         else:
             ok, msg, rows_new = parse_promet_df_to_rows(
@@ -2258,26 +2955,35 @@ def show_promet_review(path, kind: str):
                     values=(
                         row.get("Sifra", ""),
                         "" if qty_val is None else qty_val,
-                        "" if row.get("Vrijednost") is None else f"{row.get('Vrijednost'):.2f}",
+                        (
+                            ""
+                            if row.get("Vrijednost") is None
+                            else f"{row.get('Vrijednost'):.2f}"
+                        ),
                     ),
                 )
             info.configure(
                 text=f"Fajl: {os.path.basename(path)} | Stavki: {len(rows_new)}"
             )
-            count_label.configure(text=f"Prikazano {len(rows_new)} od {len(rows_new)} stavki.")
+            count_label.configure(
+                text=f"Prikazano {len(rows_new)} od {len(rows_new)} stavki."
+            )
         else:
             error_label.configure(text=msg)
             info.configure(text=f"Fajl: {os.path.basename(path)} | Stavki: 0")
             count_label.configure(text="Prikazano 0 od 0 stavki.")
 
         total = 0
-        for sheet_key in (sheet_names or [0]):
+        for sheet_key in sheet_names or [0]:
             try:
                 df_sheet = load_sheet_df(sheet_key) if sheet_names else None
             except Exception:
                 continue
             ok_total, _msg_total, rows_total = parse_promet_df_to_rows(
-                df_sheet, kind, col_offsets=offsets_by_sheet.get(sheet_key), add_vat=True
+                df_sheet,
+                kind,
+                col_offsets=offsets_by_sheet.get(sheet_key),
+                add_vat=True,
             )
             if ok_total:
                 total += len(rows_total)
@@ -2308,10 +3014,13 @@ def show_promet_review(path, kind: str):
                 active_sheet.set(unvisited[0])
                 return
         combined_rows = []
-        for sheet_key in (sheet_names or [0]):
+        for sheet_key in sheet_names or [0]:
             df_sheet = load_sheet_df(sheet_key) if sheet_names else None
             ok, msg, rows_new = parse_promet_df_to_rows(
-                df_sheet, kind, col_offsets=offsets_by_sheet.get(sheet_key), add_vat=True
+                df_sheet,
+                kind,
+                col_offsets=offsets_by_sheet.get(sheet_key),
+                add_vat=True,
             )
             if not ok:
                 error_label.configure(text=msg)
@@ -2695,9 +3404,7 @@ def analyze_sales():
     if rate <= 0:
         rate = safe_float(usd_bam_rate, 0.0)
     if rate <= 0:
-        messagebox.showerror(
-            "Greska", "Unesite USD->KM kurs ili ucitajte sa CBBiH."
-        )
+        messagebox.showerror("Greska", "Unesite USD->KM kurs ili ucitajte sa CBBiH.")
         return
     usd_bam_rate = rate
     save_settings()
@@ -2750,17 +3457,26 @@ def analyze_sales():
         lambda s: pd.Series(nabavna_value_and_currency(s))
     )
     df["Nabavna_KM"] = df.apply(
-        lambda r: float(r["Nabavna_val"]) if r["Nabavna_is_km"] else float(r["Nabavna_val"]) * usd_bam_rate,
+        lambda r: (
+            float(r["Nabavna_val"])
+            if r["Nabavna_is_km"]
+            else float(r["Nabavna_val"]) * usd_bam_rate
+        ),
         axis=1,
     )
     df["Nabavna_usd"] = df.apply(
-        lambda r: float(r["Nabavna_val"]) / usd_bam_rate if r["Nabavna_is_km"] and usd_bam_rate else float(r["Nabavna_val"]),
+        lambda r: (
+            float(r["Nabavna_val"]) / usd_bam_rate
+            if r["Nabavna_is_km"] and usd_bam_rate
+            else float(r["Nabavna_val"])
+        ),
         axis=1,
     )
     df["COGS_KM"] = df["Kolicina"] * df["Nabavna_KM"]
     df["VAT_rate"] = df["Sifra"].apply(
         lambda s: KALK_VAT_BY_SKU.get(str(s).strip().upper(), 17.0)
     )
+
     def _mp_wo_vat_for_row(r):
         sku = str(r["Sifra"]).strip().upper()
         vat_rate = float(r["VAT_rate"])
@@ -2829,9 +3545,7 @@ def analyze_sales():
     )
 
     kalk_skus = set(KALK_NABAVNE_BY_SKU.keys())
-    missing_skus = sorted(
-        sku for sku in df["Sifra"].unique() if sku not in kalk_skus
-    )
+    missing_skus = sorted(sku for sku in df["Sifra"].unique() if sku not in kalk_skus)
     for sku in missing_skus:
         is_manual = sku in PRICE_BY_SKU
         status = (
@@ -2923,9 +3637,8 @@ def analyze_sales():
         df_group = df_group.merge(df_net_by_cat, on="Kategorija", how="left")
         net_revenue = df_group["Neto_prihod"]
         df_group["Neto_marza_pct"] = (
-            (net_revenue - df_group["Neto_trosak_KM"])
-            / net_revenue.replace(0, 1)
-        )
+            net_revenue - df_group["Neto_trosak_KM"]
+        ) / net_revenue.replace(0, 1)
     else:
         df_group["Neto_marza_pct"] = None
     total_net_margin = None
@@ -2946,7 +3659,9 @@ def analyze_sales():
     df_group["pct_vrijednosti"] = df_group["Vrijednost"] / total_v
 
     # Sortiraj po vrijednosti (KM) opadajuce
-    df_group["Vrijednost"] = pd.to_numeric(df_group["Vrijednost"], errors="coerce").fillna(0)
+    df_group["Vrijednost"] = pd.to_numeric(
+        df_group["Vrijednost"], errors="coerce"
+    ).fillna(0)
     df_group = df_group.sort_values("Vrijednost", ascending=False)
 
     # -----------------------------------------------------------------
@@ -3047,13 +3762,14 @@ def analyze_sales():
     if use_net_margin:
         net_revenue_items = df_items["Neto_prihod"]
         df_items["Neto_marza_pct"] = (
-            (net_revenue_items - df_items["Neto_trosak_KM"])
-            / net_revenue_items.replace(0, 1)
-        )
+            net_revenue_items - df_items["Neto_trosak_KM"]
+        ) / net_revenue_items.replace(0, 1)
     else:
         df_items["Neto_marza_pct"] = None
 
-    df_items = df_items.sort_values(["Kategorija", "Vrijednost"], ascending=[True, False])
+    df_items = df_items.sort_values(
+        ["Kategorija", "Vrijednost"], ascending=[True, False]
+    )
 
     headers_items = [
         "Kategorija",
@@ -3113,13 +3829,18 @@ def analyze_sales():
 
     df_group_items = df_items.copy()
     cat_totals = df_group_items.groupby("Kategorija").agg(
-        total_k=("Kolicina", "sum"), total_v=("Vrijednost", "sum"),
+        total_k=("Kolicina", "sum"),
+        total_v=("Vrijednost", "sum"),
     )
     df_group_items = df_group_items.merge(
         cat_totals, left_on="Kategorija", right_index=True
     )
-    df_group_items["Udio_kolicine_grupa"] = df_group_items["Kolicina"] / df_group_items["total_k"].replace(0, 1)
-    df_group_items["Udio_vrijednosti_grupa"] = df_group_items["Vrijednost"] / df_group_items["total_v"].replace(0, 1)
+    df_group_items["Udio_kolicine_grupa"] = df_group_items["Kolicina"] / df_group_items[
+        "total_k"
+    ].replace(0, 1)
+    df_group_items["Udio_vrijednosti_grupa"] = df_group_items[
+        "Vrijednost"
+    ] / df_group_items["total_v"].replace(0, 1)
     # sortiraj artikle unutar svake grupe po % kolicine (najvece -> najmanje)
     df_group_items = df_group_items.sort_values(
         ["Kategorija", "Udio_kolicine_grupa", "Kolicina"],
@@ -3142,9 +3863,7 @@ def analyze_sales():
 
     net_pct_by_cat = {}
     if use_net_margin:
-        net_pct_by_cat = dict(
-            zip(df_group["Kategorija"], df_group["Neto_marza_pct"])
-        )
+        net_pct_by_cat = dict(zip(df_group["Kategorija"], df_group["Neto_marza_pct"]))
     last_cat = None
     for _, r in df_group_items.iterrows():
         row_idx = ws_groups.max_row + 1
@@ -3171,7 +3890,6 @@ def analyze_sales():
             for col in range(1, 10):
                 ws_groups.cell(row=row_idx, column=col).fill = custom_fill
         last_cat = r["Kategorija"]
-
 
     # -----------------------------------------------------------------
     # SNIMI FAJL
@@ -3234,7 +3952,11 @@ def generate_promet_zaliha():
     if not review_sales.get("ok"):
         return
     df_sales = pd.DataFrame(review_sales.get("rows", []))
-    if df_sales.empty or "Sifra" not in df_sales.columns or "Kolicina" not in df_sales.columns:
+    if (
+        df_sales.empty
+        or "Sifra" not in df_sales.columns
+        or "Kolicina" not in df_sales.columns
+    ):
         messagebox.showerror("Greska", "Nedostaju kolone Sifra i Kolicina u prodaji.")
         return
     if "Vrijednost" not in df_sales.columns:
@@ -3243,14 +3965,18 @@ def generate_promet_zaliha():
     df_sales["Sifra"] = df_sales["Sifra"].astype(str).apply(auto_format_sifra)
     df_sales["Kolicina"] = df_sales["Kolicina"].apply(safe_float)
     df_sales["Vrijednost"] = df_sales["Vrijednost"].apply(safe_float)
-    df_sales = (
-        df_sales.groupby("Sifra", as_index=False)[["Kolicina", "Vrijednost"]].sum()
-    )
+    df_sales = df_sales.groupby("Sifra", as_index=False)[
+        ["Kolicina", "Vrijednost"]
+    ].sum()
     sales_map = dict(zip(df_sales["Sifra"], df_sales["Kolicina"]))
     sales_value_map = dict(zip(df_sales["Sifra"], df_sales["Vrijednost"]))
     sales_avg_map = {
-        str(sku).strip().upper(): (safe_float(val) / safe_float(qty) if safe_float(qty) > 0 else 0.0)
-        for sku, qty, val in zip(df_sales["Sifra"], df_sales["Kolicina"], df_sales["Vrijednost"])
+        str(sku)
+        .strip()
+        .upper(): (safe_float(val) / safe_float(qty) if safe_float(qty) > 0 else 0.0)
+        for sku, qty, val in zip(
+            df_sales["Sifra"], df_sales["Kolicina"], df_sales["Vrijednost"]
+        )
     }
 
     try:
@@ -3261,7 +3987,11 @@ def generate_promet_zaliha():
     if not review_stanje.get("ok"):
         return
     df_stanje = pd.DataFrame(review_stanje.get("rows", []))
-    if df_stanje.empty or "Sifra" not in df_stanje.columns or "Stanje" not in df_stanje.columns:
+    if (
+        df_stanje.empty
+        or "Sifra" not in df_stanje.columns
+        or "Stanje" not in df_stanje.columns
+    ):
         messagebox.showerror("Greska", "Nedostaju kolone Sifra i Stanje u stanju.")
         return
     df_stanje["Sifra"] = df_stanje["Sifra"].astype(str).apply(auto_format_sifra)
@@ -3598,9 +4328,11 @@ def calculate_procurement():
         )
         return
     df_group["Cijena_artikla"] = df_group.apply(
-        lambda r: float(r["Nabavna_val"]) / usd_bam_rate
-        if r["Nabavna_is_km"]
-        else float(r["Nabavna_val"]),
+        lambda r: (
+            float(r["Nabavna_val"]) / usd_bam_rate
+            if r["Nabavna_is_km"]
+            else float(r["Nabavna_val"])
+        ),
         axis=1,
     )
 
@@ -4069,7 +4801,9 @@ def calculate_procurement():
         ws_custom.cell(start_c + 1, 2, round(ukupno_transport_custom, 2))
 
         ws_custom.cell(start_c + 2, 1, "TOTAL (artikli + transport)")
-        ws_custom.cell(start_c + 2, 2, round(cost_articles(df_custom) + ukupno_transport_custom, 2))
+        ws_custom.cell(
+            start_c + 2, 2, round(cost_articles(df_custom) + ukupno_transport_custom, 2)
+        )
 
         ws_custom.cell(start_c + 3, 1, "Total komada")
         ws_custom.cell(start_c + 3, 2, int(df_custom["Kolicina_final"].sum()))
@@ -4129,6 +4863,7 @@ def clear_pages(app):
     app.page_sales.pack_forget()
     app.page_promet.pack_forget()
     app.page_proc.pack_forget()
+    app.page_izdavanje.pack_forget()
     app.page_settings.pack_forget()
 
 
@@ -4147,6 +4882,14 @@ def show_proc(self):
     self.page_proc.pack(fill="both", expand=True)
 
 
+# Izdavanje marketing / otpis
+def show_izdavanje(self):
+    clear_pages(self)
+    self.page_izdavanje.pack(fill="both", expand=True)
+    if "izd_refresh_doc_no" in globals():
+        izd_refresh_doc_no()
+
+
 # Proracun prometa i zaliha
 def show_promet(self):
     clear_pages(self)
@@ -4157,6 +4900,7 @@ def show_promet(self):
 ctk.CTk.show_pantheon = show_pantheon
 ctk.CTk.show_sales = show_sales
 ctk.CTk.show_proc = show_proc
+ctk.CTk.show_izdavanje = show_izdavanje
 ctk.CTk.show_promet = show_promet
 
 
@@ -4200,8 +4944,13 @@ def build_sidebar(self):
     btn4 = ctk.CTkButton(sidebar, text="Nabavka", command=self.show_proc)
     btn4.pack(pady=8, fill="x", padx=10)
 
-    btn5 = ctk.CTkButton(sidebar, text="Podesavanja", command=self.show_settings)
+    btn5 = ctk.CTkButton(
+        sidebar, text="Izdavanje marketing/otpis", command=self.show_izdavanje
+    )
     btn5.pack(pady=8, fill="x", padx=10)
+
+    btn6 = ctk.CTkButton(sidebar, text="Podesavanja", command=self.show_settings)
+    btn6.pack(pady=8, fill="x", padx=10)
 
     footer = ctk.CTkLabel(
         sidebar, text="💰 FEMMA finance dept.", font=ctk.CTkFont(size=12, weight="bold")
@@ -4749,9 +5498,7 @@ def build_proc_page(self, parent):
     ).pack(anchor="w", padx=14, pady=2)
     ctk.CTkCheckBox(
         sec_cat, text="Perike (Klasične / Premium)", variable=p_cb_per_var
-    ).pack(
-        anchor="w", padx=14, pady=2
-    )
+    ).pack(anchor="w", padx=14, pady=2)
     ctk.CTkCheckBox(
         sec_cat, text="Custom proizvodi (min 50 kom)", variable=p_cb_custom_var
     ).pack(anchor="w", padx=14, pady=2)
@@ -4794,7 +5541,9 @@ def build_proc_page(self, parent):
     global p_ignore_budget_var
     p_ignore_budget_var = tk.BooleanVar(value=False)
     ctk.CTkCheckBox(
-        sec_form, text="Ignorisi budzet (nabavi za cilj zaliha)", variable=p_ignore_budget_var
+        sec_form,
+        text="Ignorisi budzet (nabavi za cilj zaliha)",
+        variable=p_ignore_budget_var,
     ).grid(row=1, column=2, columnspan=2, padx=10, pady=8, sticky="w")
 
     # ===============================
@@ -4903,6 +5652,748 @@ def build_proc_page(self, parent):
     )
     footer.pack(pady=8)
 
+
+# -------------------------------------------------------------------------
+# GUI - IZDAVANJE MARKETING / OTPIS
+# -------------------------------------------------------------------------
+
+
+def build_izdavanje_page(self, parent):
+    container = ctk.CTkFrame(parent)
+    container.pack(fill="both", expand=True, padx=20, pady=20)
+
+    header_font = _ctk_font(size=20, weight="bold")
+    section_font = _ctk_font(size=14, weight="bold")
+    label_font = _ctk_font(size=12)
+    entry_font = _ctk_font(size=12)
+    button_font = _ctk_font(size=12, weight="bold")
+    log_font = (UI_FONT_FAMILY or "Segoe UI", 10)
+
+    style = ttk.Style()
+    ttk_family = UI_FONT_FAMILY or "Segoe UI"
+    style.configure("Izdavanje.TCombobox", font=(ttk_family, 10))
+    style.configure("Izdavanje.Treeview", font=(ttk_family, 10))
+    style.configure("Izdavanje.Treeview.Heading", font=(ttk_family, 10, "bold"))
+
+    header = ctk.CTkLabel(
+        container,
+        text="Izdavanje marketing / otpis",
+        font=header_font,
+    )
+    header.pack(pady=(10, 15))
+
+    form_frame = ctk.CTkFrame(container)
+    form_frame.pack(fill="x", padx=10, pady=(0, 10))
+    form_frame.grid_columnconfigure(1, weight=1)
+    form_frame.grid_columnconfigure(3, weight=1)
+
+    # Podaci o dokumentu
+    ctk.CTkLabel(form_frame, text="Podaci o dokumentu", font=section_font).grid(
+        row=0, column=0, columnspan=4, sticky="w", padx=10, pady=(8, 6)
+    )
+
+    ctk.CTkLabel(form_frame, text="Naziv primaoca", font=label_font).grid(
+        row=1, column=0, padx=10, pady=6, sticky="e"
+    )
+    global izd_recipient_entry
+    izd_recipient_entry = ctk.CTkEntry(form_frame, font=entry_font)
+    izd_recipient_entry.grid(row=1, column=1, padx=10, pady=6, sticky="ew")
+
+    ctk.CTkLabel(form_frame, text="Tip primaoca", font=label_font).grid(
+        row=1, column=2, padx=10, pady=6, sticky="e"
+    )
+    global izd_recipient_type_combo
+    izd_recipient_type_combo = ttk.Combobox(
+        form_frame,
+        values=izd_recipient_types,
+        state="normal",
+        style="Izdavanje.TCombobox",
+    )
+    izd_recipient_type_combo.set(izd_recipient_types[0] if izd_recipient_types else "")
+    izd_recipient_type_combo.grid(row=1, column=3, padx=10, pady=6, sticky="ew")
+
+    ctk.CTkLabel(form_frame, text="Svrha izdavanja", font=label_font).grid(
+        row=2, column=0, padx=10, pady=6, sticky="e"
+    )
+    global izd_purpose_var
+    izd_purpose_var = tk.StringVar(value=list(IZD_PURPOSE_TO_TYPE.keys())[0])
+    izd_purpose_combo = ttk.Combobox(
+        form_frame,
+        values=list(IZD_PURPOSE_TO_TYPE.keys()),
+        textvariable=izd_purpose_var,
+        state="readonly",
+        style="Izdavanje.TCombobox",
+    )
+    izd_purpose_combo.grid(row=2, column=1, padx=10, pady=6, sticky="ew")
+
+    ctk.CTkLabel(form_frame, text="Datum", font=label_font).grid(
+        row=2, column=2, padx=10, pady=6, sticky="e"
+    )
+    global izd_date_entry
+    izd_date_entry = DateEntry(
+        form_frame,
+        width=12,
+        date_pattern="dd.mm.yyyy",
+        font=(UI_FONT_FAMILY or "Segoe UI", 10),
+    )
+    izd_date_entry.grid(row=2, column=3, padx=10, pady=6, sticky="w")
+
+    ctk.CTkLabel(form_frame, text="Direktor", font=label_font).grid(
+        row=3, column=0, padx=10, pady=6, sticky="e"
+    )
+    global izd_director_entry
+    izd_director_entry = ctk.CTkEntry(form_frame, font=entry_font)
+    izd_director_entry.insert(0, izd_director_default)
+    izd_director_entry.grid(row=3, column=1, padx=10, pady=6, sticky="ew")
+
+    ctk.CTkLabel(form_frame, text="Godina", font=label_font).grid(
+        row=3, column=2, padx=10, pady=6, sticky="e"
+    )
+    global izd_year_entry
+    izd_year_entry = ctk.CTkEntry(form_frame, width=80, font=entry_font)
+    izd_year_entry.grid(row=3, column=3, padx=10, pady=6, sticky="w")
+
+    ctk.CTkLabel(form_frame, text="Br. dokumenta", font=label_font).grid(
+        row=4, column=0, padx=10, pady=6, sticky="e"
+    )
+    global izd_doc_no_entry
+    izd_doc_no_entry = ctk.CTkEntry(form_frame, font=entry_font)
+    izd_doc_no_entry.grid(row=4, column=1, padx=10, pady=6, sticky="ew")
+
+    def _refresh_doc_no_button():
+        if "izd_refresh_doc_no" in globals():
+            izd_refresh_doc_no()
+
+    btn_refresh_doc = ctk.CTkButton(
+        form_frame,
+        text="Osvjezi",
+        width=90,
+        fg_color="#2b8a3e",
+        hover_color="#237133",
+        command=_refresh_doc_no_button,
+        font=button_font,
+    )
+    btn_refresh_doc.grid(row=4, column=2, padx=10, pady=6, sticky="e")
+
+    global izd_reason_label
+    izd_reason_label = ctk.CTkLabel(form_frame, text="Razlog otpisa", font=label_font)
+    izd_reason_label.grid(row=5, column=0, padx=10, pady=6, sticky="e")
+    global izd_reason_entry
+    izd_reason_entry = ctk.CTkEntry(form_frame, font=entry_font)
+    izd_reason_entry.grid(row=5, column=1, columnspan=3, padx=10, pady=6, sticky="ew")
+
+    # Izvor podataka
+    source_frame = ctk.CTkFrame(container)
+    source_frame.pack(fill="x", padx=10, pady=(0, 10))
+    ctk.CTkLabel(source_frame, text="Izvor podataka", font=section_font).grid(
+        row=0, column=0, columnspan=2, sticky="w", padx=10, pady=(8, 6)
+    )
+
+    global izd_json_label
+    izd_json_label = ctk.CTkLabel(
+        source_frame,
+        text=f"JSON sa siframa i cijenama: {os.path.basename(izd_json_path)}",
+        text_color=TEXT_MUTED,
+        font=label_font,
+    )
+    izd_json_label.grid(row=1, column=0, padx=10, pady=6, sticky="w")
+
+    def choose_izd_json():
+        global izd_json_path
+        p = filedialog.askopenfilename(
+            title="Odaberi JSON sa siframa i cijenama",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            initialdir=os.path.dirname(izd_json_path) if izd_json_path else None,
+        )
+        if not p:
+            return
+        izd_json_path = p
+        izd_json_label.configure(
+            text=f"JSON sa siframa i cijenama: {os.path.basename(izd_json_path)}"
+        )
+        _izd_refresh_price_data()
+        save_settings()
+        izd_log("JSON izvor promijenjen.")
+
+    btn_json = ctk.CTkButton(
+        source_frame,
+        text="Promijeni...",
+        fg_color="#3b5bdb",
+        hover_color="#2f4ac0",
+        command=choose_izd_json,
+        font=button_font,
+    )
+    btn_json.grid(row=1, column=1, padx=10, pady=6, sticky="e")
+
+    # Dodavanje artikala
+    add_frame = ctk.CTkFrame(container)
+    add_frame.pack(fill="x", padx=10, pady=(0, 10))
+    ctk.CTkLabel(add_frame, text="Dodavanje artikala", font=section_font).grid(
+        row=0, column=0, columnspan=4, sticky="w", padx=10, pady=(8, 6)
+    )
+
+    ctk.CTkLabel(add_frame, text="Artikal (SKU ili naziv)", font=label_font).grid(
+        row=1, column=0, padx=10, pady=6, sticky="e"
+    )
+    global izd_sku_entry
+    izd_sku_entry = ctk.CTkEntry(add_frame, font=entry_font)
+    izd_sku_entry.grid(row=1, column=1, padx=10, pady=6, sticky="ew")
+
+    ctk.CTkLabel(add_frame, text="Kolicina", font=label_font).grid(
+        row=1, column=2, padx=10, pady=6, sticky="e"
+    )
+    global izd_qty_entry
+    izd_qty_entry = ctk.CTkEntry(add_frame, width=80, font=entry_font)
+    izd_qty_entry.insert(0, "1")
+    izd_qty_entry.grid(row=1, column=3, padx=10, pady=6, sticky="w")
+
+    add_frame.grid_columnconfigure(1, weight=1)
+
+    global izd_sku_listbox
+    izd_sku_listbox = tk.Listbox(
+        add_frame,
+        height=5,
+        exportselection=False,
+        font=(UI_FONT_FAMILY or "Segoe UI", 10),
+    )
+    izd_sku_listbox.grid(
+        row=2, column=1, columnspan=3, padx=10, pady=(0, 6), sticky="ew"
+    )
+
+    ctk.CTkLabel(
+        add_frame,
+        text="Savjet: Enter dodaje (tacan SKU ili prvu sugestiju).",
+        text_color=TEXT_MUTED,
+        font=label_font,
+    ).grid(row=3, column=1, columnspan=3, padx=10, pady=(0, 6), sticky="w")
+
+    # Tabela + akcije
+    mid_frame = ctk.CTkFrame(container)
+    mid_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+    mid_frame.grid_columnconfigure(0, weight=1)
+
+    table_frame = ctk.CTkFrame(mid_frame)
+    table_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+    table_frame.grid_rowconfigure(0, weight=1)
+    table_frame.grid_columnconfigure(0, weight=1)
+
+    columns = ("sku", "name", "qty", "nab", "mpc")
+    global izd_tree
+    izd_tree = ttk.Treeview(
+        table_frame, columns=columns, show="headings", style="Izdavanje.Treeview"
+    )
+    izd_tree.heading("sku", text="SKU")
+    izd_tree.heading("name", text="Naziv")
+    izd_tree.heading("qty", text="Kolicina")
+    izd_tree.heading("nab", text="Nabavna (KM)")
+    izd_tree.heading("mpc", text="MPC (KM)")
+    izd_tree.column("sku", width=90)
+    izd_tree.column("name", width=260)
+    izd_tree.column("qty", width=70, anchor="center")
+    izd_tree.column("nab", width=100, anchor="e")
+    izd_tree.column("mpc", width=100, anchor="e")
+    izd_tree.grid(row=0, column=0, sticky="nsew")
+
+    vsb = ttk.Scrollbar(table_frame, orient="vertical", command=izd_tree.yview)
+    izd_tree.configure(yscrollcommand=vsb.set)
+    vsb.grid(row=0, column=1, sticky="ns")
+
+    actions_frame = ctk.CTkFrame(mid_frame, width=200)
+    actions_frame.grid(row=0, column=1, sticky="ns")
+
+    ctk.CTkLabel(actions_frame, text="AKCIJE", font=section_font).pack(pady=(10, 6))
+
+    global izd_row_meta
+    izd_row_meta = {}
+
+    def izd_log(msg):
+        if "izd_log_box" not in globals():
+            return
+        stamp = datetime.now().strftime("%H:%M:%S")
+        izd_log_box.insert("end", f"[{stamp}] {msg}\n")
+        izd_log_box.see("end")
+
+    globals()["izd_log"] = izd_log
+
+    def _update_year_from_date(_evt=None):
+        try:
+            dt = izd_date_entry.get_date()
+            izd_year_entry.delete(0, "end")
+            izd_year_entry.insert(0, str(dt.year))
+        except Exception:
+            pass
+        _refresh_doc_no_button()
+
+    def _refresh_doc_no():
+        purpose = izd_purpose_var.get()
+        doc_type = _izd_get_doc_type(purpose)
+        year_val = izd_year_entry.get().strip() or str(datetime.now().year)
+        doc_no = _izd_next_doc_no(doc_type, year_val)
+        izd_doc_no_entry.delete(0, "end")
+        izd_doc_no_entry.insert(0, doc_no)
+
+    globals()["izd_refresh_doc_no"] = _refresh_doc_no
+
+    def _on_purpose_change(_evt=None):
+        doc_type = _izd_get_doc_type(izd_purpose_var.get())
+        if doc_type == "OTP":
+            izd_reason_label.grid()
+            izd_reason_entry.grid()
+            izd_recipient_entry.configure(state="disabled")
+        else:
+            izd_reason_label.grid_remove()
+            izd_reason_entry.grid_remove()
+            izd_recipient_entry.configure(state="normal")
+        _refresh_doc_no()
+
+    def _store_director(_evt=None):
+        global izd_director_default
+        izd_director_default = izd_director_entry.get().strip() or DEFAULT_IZD_DIRECTOR
+        save_settings()
+
+    def _store_recipient_type(_evt=None):
+        global izd_recipient_types
+        val = izd_recipient_type_combo.get().strip()
+        if val and val not in izd_recipient_types:
+            izd_recipient_types.append(val)
+            izd_recipient_type_combo.configure(values=izd_recipient_types)
+            save_settings()
+
+    izd_date_entry.bind("<<DateEntrySelected>>", _update_year_from_date)
+    izd_director_entry.bind("<FocusOut>", _store_director)
+    izd_recipient_type_combo.bind("<FocusOut>", _store_recipient_type)
+    izd_purpose_combo.bind("<<ComboboxSelected>>", _on_purpose_change)
+
+    def _add_item_from_sku(sku, qty):
+        item = _izd_get_item_data(sku)
+        if not item:
+            messagebox.showerror("Greska", f"SKU nije pronaden: {sku}")
+            return
+        for iid in izd_tree.get_children():
+            vals = izd_tree.item(iid, "values")
+            if vals and str(vals[0]).upper() == item["sku"]:
+                try:
+                    cur_qty = float(vals[2])
+                except Exception:
+                    cur_qty = 0.0
+                new_qty = cur_qty + qty
+                izd_tree.item(
+                    iid,
+                    values=(
+                        item["sku"],
+                        item["name"],
+                        f"{new_qty:.2f}".rstrip("0").rstrip("."),
+                        f"{item['nab']:.2f}",
+                        f"{item['mpc_w']:.2f}",
+                    ),
+                )
+                izd_row_meta[iid] = item["vat_rate"]
+                return
+        iid = izd_tree.insert(
+            "",
+            "end",
+            values=(
+                item["sku"],
+                item["name"],
+                f"{qty:.2f}".rstrip("0").rstrip("."),
+                f"{item['nab']:.2f}",
+                f"{item['mpc_w']:.2f}",
+            ),
+        )
+        izd_row_meta[iid] = item["vat_rate"]
+
+    def _add_item(_evt=None):
+        sku_raw = izd_sku_entry.get().strip()
+        matches = _izd_find_matches(sku_raw)
+        sku = None
+        if sku_raw and sku_raw.upper() in IZD_PRICE_DATA:
+            sku = sku_raw.upper()
+        elif matches:
+            sku = matches[0]
+        if not sku:
+            messagebox.showerror("Greska", "Unesi validan SKU.")
+            return
+        try:
+            qty = float(izd_qty_entry.get().replace(",", "."))
+        except Exception:
+            qty = 0.0
+        if qty <= 0:
+            messagebox.showerror("Greska", "Unesi validnu kolicinu.")
+            return
+        _add_item_from_sku(sku, qty)
+        izd_sku_entry.delete(0, "end")
+        izd_qty_entry.delete(0, "end")
+        izd_qty_entry.insert(0, "1")
+        izd_sku_listbox.delete(0, "end")
+        izd_log(f"Dodat artikal: {sku} x {qty}")
+
+    btn_add_item = ctk.CTkButton(
+        add_frame,
+        text="Dodaj",
+        fg_color="#2b8a3e",
+        hover_color="#237133",
+        command=_add_item,
+        font=button_font,
+    )
+    btn_add_item.grid(row=1, column=4, padx=10, pady=6, sticky="w")
+
+    def _update_suggestions(_evt=None):
+        query = izd_sku_entry.get().strip()
+        izd_sku_listbox.delete(0, "end")
+        for sku in _izd_find_matches(query):
+            item = _izd_get_item_data(sku)
+            name = item["name"] if item else ""
+            izd_sku_listbox.insert("end", f"{sku} - {name}")
+        if izd_sku_listbox.size() > 0:
+            izd_sku_listbox.grid()
+        else:
+            izd_sku_listbox.grid_remove()
+
+    def _on_listbox_select(_evt=None):
+        selection = izd_sku_listbox.curselection()
+        if not selection:
+            return
+        text = izd_sku_listbox.get(selection[0])
+        sku = text.split(" - ")[0].strip()
+        izd_sku_entry.delete(0, "end")
+        izd_sku_entry.insert(0, sku)
+        izd_sku_listbox.grid_remove()
+
+    izd_sku_entry.bind("<KeyRelease>", _update_suggestions)
+    izd_sku_entry.bind("<Return>", _add_item)
+    izd_sku_listbox.bind("<<ListboxSelect>>", _on_listbox_select)
+
+    def _delete_selected():
+        selected = izd_tree.selection()
+        if not selected:
+            messagebox.showinfo("Info", "Odaberi artikal za brisanje.")
+            return
+        for iid in selected:
+            izd_tree.delete(iid)
+            izd_row_meta.pop(iid, None)
+        izd_log("Obrisan odabrani artikal.")
+
+    def _edit_qty():
+        selected = izd_tree.selection()
+        if not selected:
+            messagebox.showinfo("Info", "Odaberi artikal za izmjenu.")
+            return
+        iid = selected[0]
+        vals = izd_tree.item(iid, "values")
+        if not vals:
+            return
+        current_qty = vals[2]
+        new_qty = simpledialog.askfloat(
+            "Uredi kolicinu",
+            f"Unesi novu kolicinu za {vals[0]}:",
+            initialvalue=float(current_qty),
+            minvalue=0.0,
+        )
+        if new_qty is None:
+            return
+        if new_qty <= 0:
+            izd_tree.delete(iid)
+            izd_row_meta.pop(iid, None)
+            izd_log("Artikal uklonjen (kolicina 0).")
+            return
+        izd_tree.item(
+            iid,
+            values=(
+                vals[0],
+                vals[1],
+                f"{new_qty:.2f}".rstrip("0").rstrip("."),
+                vals[3],
+                vals[4],
+            ),
+        )
+        izd_log(f"Azirana kolicina za {vals[0]}: {new_qty}")
+
+    def _clear_all():
+        if not izd_tree.get_children():
+            return
+        if not messagebox.askyesno("Potvrda", "Obrisati sve artikle?"):
+            return
+        for iid in izd_tree.get_children():
+            izd_tree.delete(iid)
+        izd_row_meta.clear()
+        izd_log("Obrisani svi artikli.")
+
+    def _choose_docs_folder():
+        global izd_docs_root
+        p = filedialog.askdirectory(
+            title="Odaberi folder za dokumente",
+            initialdir=izd_docs_root or app_base_dir(),
+        )
+        if not p:
+            return
+        izd_docs_root = p
+        izd_docs_label.configure(text=f"Folder dokumenata: {izd_docs_root}")
+        save_settings()
+        _refresh_doc_no()
+        izd_log("Folder dokumenata postavljen.")
+
+    def _choose_memo():
+        global izd_memo_path
+        p = filedialog.askopenfilename(
+            title="Odaberi memorandum (PDF ili Word)",
+            filetypes=[
+                ("PDF/Word", "*.pdf;*.doc;*.docx"),
+                ("PDF files", "*.pdf"),
+                ("All files", "*.*"),
+            ],
+            initialdir=os.path.dirname(izd_memo_path) if izd_memo_path else None,
+        )
+        if not p:
+            return
+        izd_memo_path = p
+        izd_memo_label.configure(text=f"Memorandum: {os.path.basename(izd_memo_path)}")
+        save_settings()
+        izd_log("Memorandum azuriran.")
+
+    def _compute_totals(items):
+        total_nab = 0.0
+        total_nab_pdv = 0.0
+        total_mpc_w = 0.0
+        total_mpc_pdv = 0.0
+        for it in items:
+            qty = it["qty"]
+            vat_rate = it["vat_rate"]
+            total_nab += it["nab"] * qty
+            total_nab_pdv += it["nab"] * qty * vat_rate
+            total_mpc_w += it["mpc"] * qty
+            if vat_rate > 0:
+                total_mpc_pdv += (it["mpc"] * qty) - (
+                    (it["mpc"] * qty) / (1 + vat_rate)
+                )
+        return {
+            "total_nab": total_nab,
+            "total_nab_pdv": total_nab_pdv,
+            "total_mpc_w": total_mpc_w,
+            "total_mpc_pdv": total_mpc_pdv,
+        }
+
+    def _create_pdf():
+        if not izd_tree.get_children():
+            messagebox.showerror("Greska", "Dodaj barem jedan artikal.")
+            return
+        purpose = izd_purpose_var.get()
+        doc_type = _izd_get_doc_type(purpose)
+        director = izd_director_entry.get().strip() or DEFAULT_IZD_DIRECTOR
+        recipient = normalize_text_nfc(izd_recipient_entry.get().strip())
+        recipient_type_raw = normalize_text_nfc(izd_recipient_type_combo.get().strip())
+        recipient_type = recipient_type_raw
+        if recipient_type_raw.lower() in {"influencer", "frizer", "ostalo"}:
+            recipient_type = recipient_type_raw.lower()
+        reason = normalize_text_nfc(izd_reason_entry.get().strip())
+        doc_no = normalize_text_nfc(izd_doc_no_entry.get().strip())
+        try:
+            dt = izd_date_entry.get_date()
+        except Exception:
+            dt = datetime.now().date()
+        year_val = izd_year_entry.get().strip() or str(dt.year)
+
+        if doc_type == "OTP" and not reason:
+            messagebox.showerror("Greska", "Unesi razlog otpisa.")
+            return
+        if doc_type == "MKT" and not recipient:
+            messagebox.showerror("Greska", "Unesi naziv primaoca.")
+            return
+
+        items = []
+        for iid in izd_tree.get_children():
+            vals = izd_tree.item(iid, "values")
+            if not vals:
+                continue
+            try:
+                qty = float(vals[2])
+            except Exception:
+                qty = 0.0
+            vat_rate = izd_row_meta.get(iid, 0.17)
+            nab = safe_float(vals[3], 0.0)
+            mpc = safe_float(vals[4], 0.0)
+            items.append(
+                {
+                    "sku": str(vals[0]),
+                    "name": str(vals[1]),
+                    "qty": qty,
+                    "nab": nab,
+                    "mpc": mpc,
+                    "vat_rate": _normalize_vat_rate(vat_rate),
+                }
+            )
+
+        for it in items:
+            it["nab_pdv"] = it["nab"] * it["vat_rate"]
+            if it["vat_rate"] > 0:
+                it["mpc_pdv"] = it["mpc"] - (it["mpc"] / (1 + it["vat_rate"]))
+            else:
+                it["mpc_pdv"] = 0.0
+
+        totals = _compute_totals(items)
+
+        _izd_doc_folder("MKT", year_val)
+        _izd_doc_folder("OTP", year_val)
+        doc_dir = _izd_doc_folder(doc_type, year_val)
+        file_name = _izd_safe_filename(doc_type, doc_no)
+        out_path = os.path.join(doc_dir, file_name)
+
+        memo_path = izd_memo_path
+        if memo_path and not memo_path.lower().endswith(".pdf"):
+            messagebox.showerror(
+                "Greska", "Memorandum mora biti PDF dokument za spajanje."
+            )
+            return
+
+        data = {
+            "doc_type": doc_type,
+            "doc_no": doc_no,
+            "date_str": dt.strftime("%d.%m.%Y"),
+            "director": director,
+            "recipient": recipient,
+            "recipient_type": recipient_type,
+            "reason_text": reason,
+            "items": items,
+            "totals": totals,
+        }
+
+        try:
+            _izd_generate_pdf(out_path, data, memo_path)
+        except Exception as e:
+            messagebox.showerror("Greska", f"Ne mogu kreirati PDF: {e}")
+            return
+        izd_log(f"PDF kreiran: {out_path}")
+        _refresh_doc_no()
+
+    def _reset_form():
+        izd_recipient_entry.configure(state="normal")
+        izd_recipient_entry.delete(0, "end")
+        izd_recipient_type_combo.set(
+            izd_recipient_types[0] if izd_recipient_types else ""
+        )
+        izd_purpose_combo.set(list(IZD_PURPOSE_TO_TYPE.keys())[0])
+        izd_reason_entry.delete(0, "end")
+        izd_director_entry.delete(0, "end")
+        izd_director_entry.insert(0, izd_director_default)
+        try:
+            izd_date_entry.set_date(datetime.now().date())
+        except Exception:
+            pass
+        izd_sku_entry.delete(0, "end")
+        izd_qty_entry.delete(0, "end")
+        izd_qty_entry.insert(0, "1")
+        izd_sku_listbox.delete(0, "end")
+        for iid in izd_tree.get_children():
+            izd_tree.delete(iid)
+        izd_row_meta.clear()
+        _update_year_from_date()
+        _refresh_doc_no()
+        _on_purpose_change()
+        izd_log("Spreman novi dokument.")
+
+    btn_delete = ctk.CTkButton(
+        actions_frame,
+        text="Briši artikal",
+        fg_color="#c92a2a",
+        hover_color="#a51111",
+        command=_delete_selected,
+        font=button_font,
+    )
+    btn_delete.pack(fill="x", padx=10, pady=4)
+
+    btn_edit = ctk.CTkButton(
+        actions_frame,
+        text="Uredi količinu",
+        fg_color="#5c7cfa",
+        hover_color="#4c6ef5",
+        command=_edit_qty,
+        font=button_font,
+    )
+    btn_edit.pack(fill="x", padx=10, pady=4)
+
+    btn_clear = ctk.CTkButton(
+        actions_frame,
+        text="Obriši sve",
+        fg_color="#495057",
+        hover_color="#343a40",
+        command=_clear_all,
+        font=button_font,
+    )
+    btn_clear.pack(fill="x", padx=10, pady=4)
+
+    ctk.CTkLabel(actions_frame, text="").pack(pady=6)
+
+    btn_pdf = ctk.CTkButton(
+        actions_frame,
+        text="KREIRAJ PDF",
+        fg_color=ROSEGOLD,
+        hover_color=ROSEGOLD_DARK,
+        height=40,
+        command=_create_pdf,
+        font=button_font,
+    )
+    btn_pdf.pack(fill="x", padx=10, pady=6)
+
+    btn_new = ctk.CTkButton(
+        actions_frame,
+        text="Kreiraj novi dokument",
+        command=_reset_form,
+        font=button_font,
+    )
+    btn_new.pack(fill="x", padx=10, pady=4)
+
+    global izd_docs_label
+    izd_docs_label = ctk.CTkLabel(
+        actions_frame,
+        text=f"Folder dokumenata: {izd_docs_root}",
+        text_color=TEXT_MUTED,
+        wraplength=180,
+        justify="left",
+        font=label_font,
+    )
+    izd_docs_label.pack(fill="x", padx=10, pady=(10, 4))
+
+    btn_folder = ctk.CTkButton(
+        actions_frame,
+        text="Odaberi folder",
+        command=_choose_docs_folder,
+        font=button_font,
+    )
+    btn_folder.pack(fill="x", padx=10, pady=4)
+
+    global izd_memo_label
+    memo_name = os.path.basename(izd_memo_path) if izd_memo_path else "(nije odabran)"
+    izd_memo_label = ctk.CTkLabel(
+        actions_frame,
+        text=f"Memorandum: {memo_name}",
+        text_color=TEXT_MUTED,
+        wraplength=180,
+        justify="left",
+        font=label_font,
+    )
+    izd_memo_label.pack(fill="x", padx=10, pady=(10, 4))
+
+    btn_memo = ctk.CTkButton(
+        actions_frame,
+        text="Učitaj memorandum",
+        command=_choose_memo,
+        font=button_font,
+    )
+    btn_memo.pack(fill="x", padx=10, pady=4)
+
+    # Log
+    log_frame = ctk.CTkFrame(container)
+    log_frame.pack(fill="x", padx=10, pady=(0, 10))
+    ctk.CTkLabel(log_frame, text="LOG", font=_ctk_font(size=12, weight="bold")).pack(
+        anchor="w", padx=10, pady=(8, 4)
+    )
+    global izd_log_box
+    izd_log_box = tk.Text(log_frame, height=6, bg="#111", fg="#0f0", font=log_font)
+    izd_log_box.pack(fill="x", padx=10, pady=(0, 8))
+
+    _izd_refresh_price_data()
+    _update_year_from_date()
+    _refresh_doc_no()
+    _on_purpose_change()
 
 
 # -------------------------------------------------------------------------
@@ -5266,7 +6757,11 @@ def build_settings_page(self, parent):
     add_cat_combo.grid(row=1, column=3, padx=10, pady=6, sticky="w")
 
     btn_add_sku = ctk.CTkButton(
-        top, text="Dodaj", fg_color=ROSEGOLD, hover_color=ROSEGOLD_DARK, command=add_sku_to_category
+        top,
+        text="Dodaj",
+        fg_color=ROSEGOLD,
+        hover_color=ROSEGOLD_DARK,
+        command=add_sku_to_category,
     )
     btn_add_sku.grid(row=2, column=3, padx=10, pady=(4, 10), sticky="e")
 
@@ -5286,7 +6781,9 @@ def build_settings_page(self, parent):
     view_cat_combo.grid(row=1, column=1, padx=10, pady=6, sticky="w")
 
     sku_list_frame = ctk.CTkFrame(mid)
-    sku_list_frame.grid(row=2, column=0, columnspan=3, padx=10, pady=(5, 10), sticky="nsew")
+    sku_list_frame.grid(
+        row=2, column=0, columnspan=3, padx=10, pady=(5, 10), sticky="nsew"
+    )
     mid.grid_rowconfigure(2, weight=1)
     mid.grid_columnconfigure(1, weight=1)
 
@@ -5300,7 +6797,11 @@ def build_settings_page(self, parent):
     sku_count.grid(row=3, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="w")
 
     btn_remove = ctk.CTkButton(
-        mid, text="Izbrisi odabrani", fg_color="#a33b3b", hover_color="#8a2f2f", command=remove_selected_sku
+        mid,
+        text="Izbrisi odabrani",
+        fg_color="#a33b3b",
+        hover_color="#8a2f2f",
+        command=remove_selected_sku,
     )
     btn_remove.grid(row=3, column=2, padx=10, pady=(0, 10), sticky="e")
 
@@ -5314,7 +6815,9 @@ def build_settings_page(self, parent):
     bottom.pack(fill="x", padx=10, pady=10)
 
     ctk.CTkLabel(
-        bottom, text="Nova kategorija / prefiks", font=ctk.CTkFont(size=14, weight="bold")
+        bottom,
+        text="Nova kategorija / prefiks",
+        font=ctk.CTkFont(size=14, weight="bold"),
     ).grid(row=0, column=0, columnspan=4, sticky="w", padx=10, pady=(10, 5))
 
     ctk.CTkLabel(bottom, text="Naziv kategorije:").grid(
@@ -5330,7 +6833,11 @@ def build_settings_page(self, parent):
     prefix_entry.grid(row=1, column=3, padx=10, pady=6, sticky="w")
 
     btn_add_cat = ctk.CTkButton(
-        bottom, text="Dodaj kategoriju", fg_color=ROSEGOLD, hover_color=ROSEGOLD_DARK, command=add_category_prefix
+        bottom,
+        text="Dodaj kategoriju",
+        fg_color=ROSEGOLD,
+        hover_color=ROSEGOLD_DARK,
+        command=add_category_prefix,
     )
     btn_add_cat.grid(row=2, column=3, padx=10, pady=(4, 10), sticky="e")
 
@@ -5381,8 +6888,12 @@ def build_settings_page(self, parent):
     prices_frame.grid_rowconfigure(3, weight=1)
     prices_frame.grid_columnconfigure(1, weight=1)
 
-    prefix_price_listbox = tk.Listbox(prefix_list_frame, height=8, exportselection=False)
-    prefix_price_listbox.pack(side="left", fill="both", expand=True, padx=(10, 0), pady=10)
+    prefix_price_listbox = tk.Listbox(
+        prefix_list_frame, height=8, exportselection=False
+    )
+    prefix_price_listbox.pack(
+        side="left", fill="both", expand=True, padx=(10, 0), pady=10
+    )
     prefix_scroll = tk.Scrollbar(prefix_list_frame, command=prefix_price_listbox.yview)
     prefix_scroll.pack(side="right", fill="y", pady=10, padx=(0, 10))
     prefix_price_listbox.config(yscrollcommand=prefix_scroll.set)
@@ -5890,9 +7401,7 @@ def build_settings_page(self, parent):
         )
         field_combo.pack(side="left", padx=6, pady=6)
 
-        ctk.CTkLabel(move_frame, text="Korak:").pack(
-            side="left", padx=(10, 6), pady=6
-        )
+        ctk.CTkLabel(move_frame, text="Korak:").pack(side="left", padx=(10, 6), pady=6)
         step_var = tk.StringVar(value="1")
         step_combo = ctk.CTkComboBox(
             move_frame, values=["1", "2"], width=70, variable=step_var
@@ -5972,7 +7481,11 @@ def build_settings_page(self, parent):
         btn_right.pack(side="left", padx=6, pady=6)
 
         btn_reset = ctk.CTkButton(
-            move_frame, text="Resetuj offsete", fg_color="#555555", hover_color="#444444", command=reset_offsets_current_sheet
+            move_frame,
+            text="Resetuj offsete",
+            fg_color="#555555",
+            hover_color="#444444",
+            command=reset_offsets_current_sheet,
         )
         btn_reset.pack(side="left", padx=6, pady=6)
 
@@ -6188,9 +7701,7 @@ def build_settings_page(self, parent):
                 error_label.configure(text="")
                 current_rows = rows_new
                 missing_qty = sum(
-                    1
-                    for r in current_rows
-                    if parse_float_safe(r.get("qty")) <= 0
+                    1 for r in current_rows if parse_float_safe(r.get("qty")) <= 0
                 )
                 if missing_qty:
                     qty_warn_label.configure(
@@ -6202,7 +7713,7 @@ def build_settings_page(self, parent):
                     text=f"Fajl: {os.path.basename(path)} | Stavki: {len(current_rows)}"
                 )
                 total = 0
-                for sheet_key in (sheet_names or [0]):
+                for sheet_key in sheet_names or [0]:
                     offsets_sheet = offsets_by_sheet.get(sheet_key, last_offsets)
                     if sheet_names:
                         try:
@@ -6228,9 +7739,7 @@ def build_settings_page(self, parent):
             else:
                 error_label.configure(text=msg)
                 current_rows = []
-                info.configure(
-                    text=f"Fajl: {os.path.basename(path)} | Stavki: 0"
-                )
+                info.configure(text=f"Fajl: {os.path.basename(path)} | Stavki: 0")
                 total_info.configure(text="Ukupno stavki (svi sheetovi): 0")
                 tree.delete(*tree.get_children())
                 count_label.configure(text="Prikazano 0 od 0 stavki.")
@@ -6276,7 +7785,7 @@ def build_settings_page(self, parent):
                     return
             combined_rows = []
             per_sheet_counts = []
-            for sheet_key in (sheet_names or [0]):
+            for sheet_key in sheet_names or [0]:
                 offsets = offsets_by_sheet.get(sheet_key, last_offsets)
                 if sheet_names:
                     try:
@@ -6379,8 +7888,7 @@ def build_settings_page(self, parent):
                         return
             if per_sheet_counts:
                 summary = "\n".join(
-                    f"{name}: {count} stavki"
-                    for name, count in per_sheet_counts
+                    f"{name}: {count} stavki" for name, count in per_sheet_counts
                 )
                 if not messagebox.askyesno(
                     "Potvrda sheetova",
@@ -6559,8 +8067,12 @@ def build_settings_page(self, parent):
                         rebuild_from_cache()
                         if prev.get("accepted"):
                             accepted_files = max(0, accepted_files - 1)
-                            total_rows = max(0, total_rows - prev.get("file_total_rows", 0))
-                            qty_found = max(0, qty_found - prev.get("file_qty_found", 0))
+                            total_rows = max(
+                                0, total_rows - prev.get("file_total_rows", 0)
+                            )
+                            qty_found = max(
+                                0, qty_found - prev.get("file_qty_found", 0)
+                            )
                     log_entries[:] = log_entries[: prev.get("log_len_before", 0)]
                     index = prev.get("index", max(index - 1, 0))
                 else:
@@ -6880,6 +8392,7 @@ def build_settings_page(self, parent):
 
 # Bind into class
 ctk.CTk._build_proc_page = build_proc_page
+ctk.CTk._build_izdavanje_page = build_izdavanje_page
 ctk.CTk._build_settings_page = build_settings_page
 # -------------------------------------------------------------------------
 # GLAVNA KLASA APLIKACIJE — FEMMA 12.0
@@ -6889,6 +8402,11 @@ ctk.CTk._build_settings_page = build_settings_page
 class FemmaApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+        configure_ui_font(self)
+        self.bind_all("<KeyRelease>", normalize_entry_input, add=True)
+        self.bind_all("<FocusIn>", lambda _e: force_balkan_keyboard_layout(), add=True)
+        self.bind_all("<KeyPress>", _map_balkan_keys, add=True)
+        self.after(200, force_balkan_keyboard_layout)
 
         # prozor
         self.title("FEMMA 14.0 – BiH Edition (Modern UI)")
@@ -6915,6 +8433,7 @@ class FemmaApp(ctk.CTk):
         self.page_sales = ctk.CTkFrame(self)
         self.page_promet = ctk.CTkFrame(self)
         self.page_proc = ctk.CTkFrame(self)
+        self.page_izdavanje = ctk.CTkFrame(self)
         self.page_settings = ctk.CTkFrame(self)
 
         # Sidebar
@@ -6925,6 +8444,7 @@ class FemmaApp(ctk.CTk):
         self._build_sales_page(self.page_sales)
         self._build_promet_page(self.page_promet)
         self._build_proc_page(self.page_proc)
+        self._build_izdavanje_page(self.page_izdavanje)
         self._build_settings_page(self.page_settings)
 
         # Default prikaz
@@ -6936,5 +8456,7 @@ class FemmaApp(ctk.CTk):
 # -------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    if not ensure_single_instance():
+        sys.exit(0)
     app = FemmaApp()
     app.mainloop()
