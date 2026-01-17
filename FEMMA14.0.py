@@ -1,4 +1,4 @@
-# -------------------------------------------------------------------------
+﻿# -------------------------------------------------------------------------
 # FEMMA 12.0 - BiH Edition (Modern UI)
 # Full Application Code - Imports, Globals, Pricing
 # -------------------------------------------------------------------------
@@ -332,7 +332,7 @@ def _default_promet_output_name(base_path: str | None):
 
 
 # -------------------------------------------------------------------------
-# PODESAVANJA (DEFAULTI + UČITAVANJE)
+# PODESAVANJA (DEFAULTI + UÄŒITAVANJE)
 # -------------------------------------------------------------------------
 
 SETTINGS_PATH = os.path.join(app_base_dir(), "femma_settings.json")
@@ -355,7 +355,7 @@ DEFAULT_PREFIX_MAP = {
     "EKS-": "Ekstenzije",
     "EKSOPK": "Ekstenzije OPK",
     "SIS-": "Siske",
-    "P0": "Klasične perike",
+    "P0": "Klasi?ne perike",
     "PR": "Premium perike",
 }
 DEFAULT_USD_KM_RATE = 0.0
@@ -753,22 +753,22 @@ def read_meta_tmp():
 if prefix_map.get("PR") == "Perike":
     prefix_map["PR"] = "Premium perike"
 if prefix_map.get("P0") == "Perike P0":
-    prefix_map["P0"] = "Klasične perike"
+    prefix_map["P0"] = "Klasi?ne perike"
 if "Perike" in MP_PRICE_BY_CATEGORY and "Premium perike" not in MP_PRICE_BY_CATEGORY:
     MP_PRICE_BY_CATEGORY["Premium perike"] = MP_PRICE_BY_CATEGORY["Perike"]
 if (
     "Perike P0" in MP_PRICE_BY_CATEGORY
-    and "Klasične perike" not in MP_PRICE_BY_CATEGORY
+    and "Klasi?ne perike" not in MP_PRICE_BY_CATEGORY
 ):
-    MP_PRICE_BY_CATEGORY["Klasične perike"] = MP_PRICE_BY_CATEGORY["Perike P0"]
+    MP_PRICE_BY_CATEGORY["Klasi?ne perike"] = MP_PRICE_BY_CATEGORY["Perike P0"]
 CUSTOM_SKU_SET = {s.upper() for s in CUSTOM_SKU_LIST}
 
 # -------------------------------------------------------------------------
-# MP CIJENOVNIK (KM) — OVO JE PUN DICT IZ ŠIFRARNIKA
+# MP CIJENOVNIK (KM) ? OVO JE PUN DICT IZ ?IFRARNIKA
 # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
-# MP CIJENOVNIK (KM) — učitavanje iz JSON fajla
+# MP CIJENOVNIK (KM) ? u?itavanje iz JSON fajla
 # -------------------------------------------------------------------------
 
 try:
@@ -777,7 +777,7 @@ try:
         mp_cijene = {str(k).upper(): v for k, v in mp_cijene_raw.items()}
 except FileNotFoundError:
     mp_cijene = {}
-    print("Upozorenje: mp_cjenovnik.json nije pronađen! MP cijene će biti 0.")
+    print("Upozorenje: mp_cjenovnik.json nije pronaÄ‘en! MP cijene će biti 0.")
 
 for sku in CUSTOM_SKU_SET:
     mp_cijene.setdefault(sku, 0.0)
@@ -793,7 +793,7 @@ def save_mp_cjenovnik():
 
 
 # -------------------------------------------------------------------------
-# TEŽINE PO PREFIKSIMA (grami)
+# TE?INE PO PREFIKSIMA (grami)
 # -------------------------------------------------------------------------
 
 tezine_prefiksi = {
@@ -819,18 +819,18 @@ DEFAULT_TEZINA = 200  # ako prefiks nije poznat
 
 # -------------------------------------------------------------------------
 # VOLUMEN (CBM) PO KOMADU
-# Dimenzije: 25 × 25 × 1 cm
+# Dimenzije: 25 Ã— 25 Ã— 1 cm
 # -------------------------------------------------------------------------
 
 CBM_PO_KOMADU = 0.25 * 0.25 * 0.01  # = 0.000625 m3
 
 # -------------------------------------------------------------------------
-# HELPER FUNKCIJE: PREFIKSI, CIJENE, TEŽINE, MP CIJENE
+# HELPER FUNKCIJE: PREFIKSI, CIJENE, TE?INE, MP CIJENE
 # -------------------------------------------------------------------------
 
 
 def sifra_to_prefix(sifra: str) -> str:
-    """Pronalaženje najdužeg prefiksa koji odgovara šifri."""
+    """Pronala?enje najdu?eg prefiksa koji odgovara ?ifri."""
     if not isinstance(sifra, str):
         return ""
     sifra = sifra.strip().upper()
@@ -841,7 +841,7 @@ def sifra_to_prefix(sifra: str) -> str:
 
 
 def kategorija_za_sifru(sifra: str, allow_custom: bool = True) -> str:
-    """Pronalaženje kategorije prema prefiksu."""
+    """Pronala?enje kategorije prema prefiksu."""
     if not isinstance(sifra, str):
         return "Ostalo"
     sku = sifra.strip().upper()
@@ -893,7 +893,7 @@ def mp_cijena_za_sifru(sifra: str) -> float:
 
 
 def tezina_za_sifru(sifra: str) -> float:
-    """Težina artikla u kg (grami / 1000)."""
+    """Te?ina artikla u kg (grami / 1000)."""
     pref = sifra_to_prefix(sifra)
     g = tezine_prefiksi.get(pref, DEFAULT_TEZINA)
     return float(g) / 1000.0
@@ -949,7 +949,7 @@ def safe_int(val, default=0):
 
 
 def auto_format_sifra(s: str) -> str:
-    """Čišćenje i normalizacija šifre."""
+    """ÄŒi?ćenje i normalizacija ?ifre."""
     if not isinstance(s, str):
         return ""
     return s.strip().upper()
@@ -1031,16 +1031,16 @@ def parse_calc_df_to_rows(
         text = str(value).replace("\n", " ").strip()
         text = " ".join(text.split())
         return (
-            text.replace("č", "c")
-            .replace("ć", "c")
-            .replace("š", "s")
-            .replace("ž", "z")
-            .replace("đ", "d")
-            .replace("Č", "C")
-            .replace("Ć", "C")
-            .replace("Š", "S")
-            .replace("Ž", "Z")
-            .replace("Đ", "D")
+            text.replace("?", "c")
+            .replace("Ä‡", "c")
+            .replace("?", "s")
+            .replace("?", "z")
+            .replace("Ä‘", "d")
+            .replace("ÄŒ", "C")
+            .replace("Ä†", "C")
+            .replace("?", "S")
+            .replace("?", "Z")
+            .replace("?", "D")
         )
 
     def find_col(header_row, keyword, from_right=False, contains=True):
@@ -1855,22 +1855,30 @@ def _izd_doc_folder(doc_type, year_val):
 
 def _izd_parse_existing_doc_numbers(doc_type, year_val):
     year_str = str(year_val)
+    doc_root = _izd_doc_root()
     doc_dir = _izd_doc_folder(doc_type, year_str)
-    if not os.path.isdir(doc_dir):
+    if not os.path.isdir(doc_dir) and not os.path.isdir(doc_root):
         return []
     numbers = []
-    for fn in os.listdir(doc_dir):
-        base = os.path.splitext(fn)[0]
-        if doc_type == "OTP":
-            m = re.search(r"OTP[-_ ]*(\\d+)[-/](\\d{4})", base, re.IGNORECASE)
-        else:
-            m = re.search(r"MKT[-_ ]*(\\d+)[-_ ]*(\\d{4})", base, re.IGNORECASE)
-        if not m:
-            continue
-        num = safe_float(m.group(1), 0)
-        yr = m.group(2)
-        if yr == year_str and num > 0:
-            numbers.append(int(num))
+    search_dirs = []
+    if os.path.isdir(doc_dir):
+        search_dirs.append(doc_dir)
+    if doc_dir != doc_root and os.path.isdir(doc_root):
+        search_dirs.append(doc_root)
+    for base_dir in search_dirs:
+        for root, _dirs, files in os.walk(base_dir):
+            for fn in files:
+                base = os.path.splitext(fn)[0]
+                if doc_type == "OTP":
+                    m = re.search(r"OTP[-_ ]*(\d+)[-_ ]*(\d{4})", base, re.IGNORECASE)
+                else:
+                    m = re.search(r"MKT[-_ ]*(\d+)[-_ ]*(\d{4})", base, re.IGNORECASE)
+                if not m:
+                    continue
+                num = safe_float(m.group(1), 0)
+                yr = m.group(2)
+                if yr == year_str and num > 0:
+                    numbers.append(int(num))
     return numbers
 
 
@@ -2022,10 +2030,12 @@ def _izd_merge_with_memorandum(tmp_pdf, out_pdf, memo_path):
         raise RuntimeError(f"Ne mogu otvoriti PDF datoteke: {e}")
     writer = PdfWriter()
     bg_page = reader_bg.pages[0]
+    width = float(bg_page.mediabox.width)
+    height = float(bg_page.mediabox.height)
     for page in reader_doc.pages:
-        new_page = bg_page.clone()
+        new_page = writer.add_blank_page(width=width, height=height)
+        new_page.merge_page(bg_page)
         new_page.merge_page(page)
-        writer.add_page(new_page)
     with open(out_pdf, "wb") as f:
         writer.write(f)
 
@@ -2060,13 +2070,49 @@ def _izd_draw_table_header(c, y, bold_font):
     from reportlab.lib.units import mm
 
     c.setFont(bold_font, 10)
-    c.drawString(20 * mm, y, "SKU")
-    c.drawString(50 * mm, y, "Naziv")
-    c.drawRightString(115 * mm, y, "Kol.")
-    c.drawRightString(135 * mm, y, "Nab.")
-    c.drawRightString(155 * mm, y, "PDV")
-    c.drawRightString(180 * mm, y, "MPC")
-    c.drawRightString(200 * mm, y, "PDV")
+    c.drawCentredString(34 * mm, y, "SKU")
+    c.drawCentredString(89 * mm, y, "Naziv")
+    c.drawCentredString(136 * mm, y, "Kol.")
+    c.drawCentredString(151 * mm, y, "Nab.")
+    c.drawCentredString(168 * mm, y, "PDV")
+    c.drawCentredString(184 * mm, y, "MPC")
+    c.drawCentredString(196 * mm, y, "PDV")
+
+
+def _izd_display_doc_no(doc_type, doc_no, year_val):
+    raw = (doc_no or "").strip()
+    year_str = str(year_val)
+    prefix = "MKT" if doc_type == "MKT" else "OTP"
+    m = re.search(rf"{prefix}[-_ ]*(\d+)[-_ ]*(\d{{4}})", raw, re.IGNORECASE)
+    if m:
+        return f"{prefix}-{int(m.group(1)):02d}-{m.group(2)}"
+    m = re.search(r"(\d+)[-/](\d{4})", raw)
+    if m:
+        return f"{prefix}-{int(m.group(1)):02d}-{m.group(2)}"
+    if raw:
+        return f"{prefix}-{raw}-{year_str}"
+    return f"{prefix}---{year_str}"
+
+
+def _izd_truncate_text(c, text, max_width, font_name, font_size):
+    if not text:
+        return ""
+    try:
+        from reportlab.pdfbase.pdfmetrics import stringWidth
+    except Exception:
+        return text
+    if stringWidth(text, font_name, font_size) <= max_width:
+        return text
+    ellipsis = "..."
+    max_w = max_width - stringWidth(ellipsis, font_name, font_size)
+    if max_w <= 0:
+        return ellipsis
+    out = ""
+    for ch in text:
+        if stringWidth(out + ch, font_name, font_size) > max_w:
+            break
+        out += ch
+    return out + ellipsis
 
 
 def _izd_generate_pdf(doc_path, data, memo_path):
@@ -2083,18 +2129,23 @@ def _izd_generate_pdf(doc_path, data, memo_path):
     c = canvas.Canvas(tmp_pdf, pagesize=A4)
     A4_W, A4_H = A4
 
-    top_margin = A4_H - 45 * mm
+    top_margin = A4_H - 75 * mm
     left = 20 * mm
     line_h = 6 * mm
 
     c.setFont(bold_font, 15)
+    doc_no_display = _izd_display_doc_no(
+        data.get("doc_type", ""),
+        data.get("doc_no", ""),
+        (data.get("date_str", "")[-4:] or datetime.now().year),
+    )
     if data.get("doc_type") == "OTP":
-        title = f"OTPIS ROBE S GREŠKOM Br: {data.get('doc_no','')}"
+        title = f"OTPIS ROBE S GRE\u0160KOM Br: {doc_no_display}"
     else:
-        title = f"IZDAVANJE U MARKETINŠKE SVRHE Br: {data.get('doc_no','')}"
+        title = f"IZDAVANJE U MARKETIN\u0160KE SVRHE Br: {doc_no_display}"
     c.drawCentredString(A4_W / 2, top_margin, title)
 
-    y = top_margin - 12 * mm
+    y = top_margin - 22 * mm
     c.setFont(regular_font, 11)
     c.drawString(left, y, f"Datum: {data.get('date_str','')}")
     y -= 8 * mm
@@ -2107,11 +2158,14 @@ def _izd_generate_pdf(doc_path, data, memo_path):
     if data.get("doc_type") == "OTP":
         reason = data.get("reason_text", "").strip()
         txt = (
-            f"Direktor društva odobrava otpis robe zbog {reason}, "
+            f"Direktor dru\u0161tva odobrava otpis robe zbog {reason}, "
             f"nabavne vrijednosti {nab_total:.2f} KM + PDV {nab_pdv:.2f} KM "
             f"i {mpc_total:.2f} KM + {mpc_pdv:.2f} KM."
         )
-        txt2 = "Roba će biti uskladištena u prostorijama preduzeća do njegovog uništavanja."
+        txt2 = (
+            "Roba \u0107e biti uskladi\u0161tena u prostorijama preduze\u0107a "
+            "do njegovog uni\u0161tavanja."
+        )
         lines = textwrap.wrap(txt, width=95)
         for line in lines:
             c.drawString(left, y, line)
@@ -2124,14 +2178,14 @@ def _izd_generate_pdf(doc_path, data, memo_path):
         recipient = data.get("recipient", "").strip()
         r_type = data.get("recipient_type", "").strip()
         txt = (
-            f'Direktor Društva odobrava izdavanje robe za "{recipient}" {r_type}, ukupne '
+            f'Direktor Dru\u0161tva odobrava izdavanje robe za "{recipient}" {r_type}, ukupne '
             f"nabavne vrijednosti {nab_total:.2f} KM + PDV {nab_pdv:.2f} KM i ukupne "
             f"maloprodajne vrijednosti {mpc_total:.2f} KM + {mpc_pdv:.2f} KM."
         )
         txt2 = (
-            f"Navedeni {r_type} ima saradnju sa više estradnih ličnosti i/ili veliku mrežu pratitelja "
-            f"na društvenim mrežama te će proizvode koristiti za promociju našeg brenda te "
-            f"time povećati prisutnost brenda u medijima (nastupi, spotovi i sl.)."
+            f"Navedeni {r_type} ima saradnju sa vi\u0161e estradnih li\u010dnosti i/ili veliku mre\u017eu "
+            f"pratitelja na dru\u0161tvenim mre\u017eama te \u0107e proizvode koristiti za promociju na\u0161eg "
+            f"brenda te time pove\u0107ati prisutnost brenda u medijima (nastupi, spotovi i sl.)."
         )
         for line in textwrap.wrap(txt, width=95):
             c.drawString(left, y, line)
@@ -2150,30 +2204,59 @@ def _izd_generate_pdf(doc_path, data, memo_path):
     c.setFont(bold_font, 15)
     c.drawCentredString(A4_W / 2, top_margin, "SPECIFIKACIJA ROBE")
 
-    y = top_margin - 12 * mm
-    _izd_draw_table_header(c, y, bold_font)
-    y -= 6 * mm
+    table_top = top_margin - 24 * mm
+    row_h = 8 * mm
+    x0 = 20 * mm
+    x1 = 48 * mm
+    x2 = 130 * mm
+    x3 = 142 * mm
+    x4 = 160 * mm
+    x5 = 176 * mm
+    x6 = 192 * mm
+    x7 = 200 * mm
 
+    def _draw_table_grid(y_start, rows_count):
+        y_bottom = y_start - row_h * (rows_count + 1)
+        for x in (x0, x1, x2, x3, x4, x5, x6, x7):
+            c.line(x, y_start, x, y_bottom)
+        c.line(x0, y_start, x7, y_start)
+        for i in range(rows_count + 1):
+            y_line = y_start - row_h * (i + 1)
+            c.line(x0, y_line, x7, y_line)
+
+    items = data.get("items", [])
+    max_rows = max(1, int((table_top - 70 * mm) / row_h) - 1)
+    page_items = items[:max_rows]
+    _draw_table_grid(table_top, len(page_items))
+    header_y = table_top - row_h + 5 * mm
+    _izd_draw_table_header(c, header_y, bold_font)
+    y = table_top - row_h * 1.5
     c.setFont(regular_font, 10)
-    for it in data.get("items", []):
-        if y < 35 * mm:
-            c.showPage()
-            c.setFont(bold_font, 15)
-            c.drawCentredString(A4_W / 2, top_margin, "SPECIFIKACIJA ROBE")
-            y = top_margin - 12 * mm
-            _izd_draw_table_header(c, y, bold_font)
-            y -= 6 * mm
-            c.setFont(regular_font, 10)
-        c.drawString(20 * mm, y, it["sku"])
-        c.drawString(50 * mm, y, it["name"])
-        c.drawRightString(115 * mm, y, f"{it['qty']:.2f}".rstrip("0").rstrip("."))
-        c.drawRightString(135 * mm, y, f"{it['nab']:.2f}")
-        c.drawRightString(155 * mm, y, f"{it['nab_pdv']:.2f}")
-        c.drawRightString(180 * mm, y, f"{it['mpc']:.2f}")
-        c.drawRightString(200 * mm, y, f"{it['mpc_pdv']:.2f}")
-        y -= 6 * mm
+    for it in page_items:
+        sku_text = _izd_truncate_text(
+            c, it["sku"], (x1 - x0) - 4, regular_font, 10
+        )
+        name_text = _izd_truncate_text(
+            c, it["name"], (x2 - x1) - 4, regular_font, 10
+        )
+        c.drawString(x0 + 2, y, sku_text)
+        c.drawString(x1 + 2, y, name_text)
+        c.drawRightString(x3 - 2, y, f"{it['qty']:.2f}".rstrip("0").rstrip("."))
+        c.drawRightString(x4 - 2, y, f"{it['nab']:.2f}")
+        c.drawRightString(x5 - 2, y, f"{it['nab_pdv']:.2f}")
+        c.drawRightString(x6 - 2, y, f"{it['mpc']:.2f}")
+        c.drawRightString(x7 - 2, y, f"{it['mpc_pdv']:.2f}")
+        y -= row_h
+    truncated = len(items) - len(page_items)
+    if truncated > 0:
+        c.setFont(regular_font, 9)
+        c.drawString(
+            x0,
+            y - 4 * mm,
+            f"Napomena: prikazano prvih {len(page_items)} stavki (preostalo {truncated}).",
+        )
 
-    y -= 8 * mm
+    y = 75 * mm
     c.setFont(bold_font, 11)
     totals = data.get("totals", {})
     c.drawRightString(
@@ -2201,7 +2284,7 @@ def _izd_generate_pdf(doc_path, data, memo_path):
     y -= 12 * mm
     c.setFont(regular_font, 10)
     c.drawRightString(180 * mm, y, "Direktor:")
-    c.line(150 * mm, y - 4 * mm, 200 * mm, y - 4 * mm)
+    c.line(120 * mm, y - 4 * mm, 200 * mm, y - 4 * mm)
     c.drawRightString(180 * mm, y - 10 * mm, data.get("director", ""))
 
     c.save()
@@ -2223,13 +2306,13 @@ def ensure_default_fills(wb) -> None:
 
 
 def round_custom_qty(val) -> int:
-    """Za custom proizvode zaokruži na najbližih 10, najmanje 50."""
+    """Za custom proizvode zaokru?i na najbli?ih 10, najmanje 50."""
     qty = safe_float(val, 0.0)
     return int(max(50, math.ceil(qty / 10.0) * 10))
 
 
 def find_stanje_df(wb) -> pd.DataFrame | None:
-    """Pronađi sheet koji sadrži kolone Sifra i Stanje (bilo koji sheet)."""
+    """PronaÄ‘i sheet koji sadr?i kolone Sifra i Stanje (bilo koji sheet)."""
     for name in wb.sheetnames:
         ws = wb[name]
         data = list(ws.iter_rows(values_only=True))
@@ -2272,16 +2355,16 @@ def _promet_normalize_header(value):
     text = unicodedata.normalize("NFKD", text)
     text = "".join(ch for ch in text if not unicodedata.combining(ch))
     text = (
-        text.replace("š", "s")
-        .replace("Š", "S")
-        .replace("č", "c")
-        .replace("Č", "C")
-        .replace("ć", "c")
-        .replace("Ć", "C")
-        .replace("đ", "d")
-        .replace("Đ", "D")
-        .replace("ž", "z")
-        .replace("Ž", "Z")
+        text.replace("?", "s")
+        .replace("?", "S")
+        .replace("?", "c")
+        .replace("ÄŒ", "C")
+        .replace("Ä‡", "c")
+        .replace("Ä†", "C")
+        .replace("Ä‘", "d")
+        .replace("?", "D")
+        .replace("?", "z")
+        .replace("?", "Z")
     )
     return text.lower()
 
@@ -3123,7 +3206,7 @@ def izracunaj_transport(
 
 
 # -------------------------------------------------------------------------
-# PANTHEON KONVERZIJA  —  .XLS (XML/HTML) → ČISTI .XLSX
+# PANTHEON KONVERZIJA  ?  .XLS (XML/HTML) ? ÄŒISTI .XLSX
 # -------------------------------------------------------------------------
 
 
@@ -3140,12 +3223,12 @@ def choose_pantheon_file():
 
 
 # ---------------------------------------------------------------
-# HTML-like XLS čitanje (fallback način)
+# HTML-like XLS ?itanje (fallback na?in)
 # ---------------------------------------------------------------
 
 
 def _read_html_like_xls(path: str) -> pd.DataFrame:
-    """Čitanje .xls fajla koji je ustvari HTML tabela."""
+    """ÄŒitanje .xls fajla koji je ustvari HTML tabela."""
     try:
         tables = pd.read_html(path, header=None)
         if not tables:
@@ -3153,16 +3236,16 @@ def _read_html_like_xls(path: str) -> pd.DataFrame:
         df = max(tables, key=lambda d: d.shape[0] * d.shape[1])
         return df.fillna("").astype(str)
     except Exception as e:
-        raise ValueError(f"Neuspjelo HTML čitanje: {e}")
+        raise ValueError(f"Neuspjelo HTML ?itanje: {e}")
 
 
 # ---------------------------------------------------------------
-# XML Spreadsheet ML čitanje (originalni Pantheon format)
+# XML Spreadsheet ML ?itanje (originalni Pantheon format)
 # ---------------------------------------------------------------
 
 
 def _read_spreadsheetml(path: str) -> pd.DataFrame:
-    """Čitanje Pantheon XLS XML SpreadsheetML formata."""
+    """ÄŒitanje Pantheon XLS XML SpreadsheetML formata."""
     try:
         tree = ET.parse(path)
         root = tree.getroot()
@@ -3228,7 +3311,7 @@ def _score_code_column(series: pd.Series):
 
 
 def _score_qty_column(series: pd.Series):
-    """Provjera vjerovatnoće da je kolona kolicina (numerička)."""
+    """Provjera vjerovatnoće da je kolona kolicina (numeri?ka)."""
     count = 0
     for s in series:
         try:
@@ -3240,7 +3323,7 @@ def _score_qty_column(series: pd.Series):
 
 
 def _autodetect_columns(df: pd.DataFrame):
-    """Automatsko prepoznavanje kolone šifre i kolone količine."""
+    """Automatsko prepoznavanje kolone ?ifre i kolone koli?ine."""
     best_code, best_qty = 0, 0
     code_col, qty_col = 0, 1
 
@@ -3258,16 +3341,16 @@ def _autodetect_columns(df: pd.DataFrame):
 
 
 # ---------------------------------------------------------------
-# KONVERZIJA PANTHEON → ČISTI .XLSX
+# KONVERZIJA PANTHEON ? ÄŒISTI .XLSX
 # ---------------------------------------------------------------
 
 
 def convert_pantheon():
-    """Glavna funkcija konverzije Pantheon .xls → .xlsx (prodaja + stanje)."""
+    """Glavna funkcija konverzije Pantheon .xls ? .xlsx (prodaja + stanje)."""
     global file_path, pantheon_xls_path
 
     if not pantheon_xls_path:
-        messagebox.showerror("Greška", "Prvo odaberite Pantheon .xls fajl.")
+        messagebox.showerror("Gre?ka", "Prvo odaberite Pantheon .xls fajl.")
         return
 
     try:
@@ -3293,11 +3376,11 @@ def convert_pantheon():
         df.columns = ["Sifra", "Kolicina_raw"]
         df["Sifra"] = df["Sifra"].astype(str).apply(auto_format_sifra)
 
-        # čišćenje nepotrebnih redova
+        # ?i?ćenje nepotrebnih redova
         df = df[df["Sifra"].str.strip() != ""]
         df = df[df["Sifra"].str.lower() != "ident"]
 
-        # Pantheon količine ×100 → realne količine
+        # Pantheon koli?ine Ã—100 ? realne koli?ine
         df["Kolicina"] = df["Kolicina_raw"].apply(lambda x: safe_float(x) / 100.0)
         df = df[["Sifra", "Kolicina"]]
 
@@ -3324,14 +3407,14 @@ def convert_pantheon():
 
         wb.save(out)
         file_path = out
-        messagebox.showinfo("Uspjeh", f"Konverzija završena.\nSačuvan fajl: {out}")
+        messagebox.showinfo("Uspjeh", f"Konverzija zavr?ena.\nSa?uvan fajl: {out}")
 
     except Exception as e:
-        messagebox.showerror("Greška", str(e))
+        messagebox.showerror("Gre?ka", str(e))
 
 
 # -------------------------------------------------------------------------
-# ANALIZA PRODAJE — "Ukupna prodaja" ZA V11.0
+# ANALIZA PRODAJE ? "Ukupna prodaja" ZA V11.0
 # -------------------------------------------------------------------------
 
 
@@ -3339,7 +3422,7 @@ def analyze_sales():
     global file_path
 
     if not file_path:
-        messagebox.showerror("Greška", "Prvo otvorite fajl za analizu.")
+        messagebox.showerror("Gre?ka", "Prvo otvorite fajl za analizu.")
         return
 
     if not os.path.exists(file_path):
@@ -3349,17 +3432,17 @@ def analyze_sales():
         wb = load_workbook(file_path)
     except PermissionError:
         messagebox.showerror(
-            "Greška",
-            "Ne mogu pristupiti file-u, ako je već otvoren u excel-u molim izgasite ga",
+            "Gre?ka",
+            "Ne mogu pristupiti file-u, ako je veÄ‡ otvoren u excel-u molim izgasite ga",
         )
         return
     except Exception:
-        messagebox.showerror("Greška", "Ne mogu otvoriti fajl.")
+        messagebox.showerror("Gre?ka", "Ne mogu otvoriti fajl.")
         return
 
     ws = get_sheet_by_name_ci(wb, "prodaja")
     if ws is None:
-        messagebox.showerror("Greška", "Nedostaje sheet 'prodaja'.")
+        messagebox.showerror("Gre?ka", "Nedostaje sheet 'prodaja'.")
         return
     rows = list(ws.iter_rows(values_only=True))
     headers = rows[0]
@@ -3665,7 +3748,7 @@ def analyze_sales():
     df_group = df_group.sort_values("Vrijednost", ascending=False)
 
     # -----------------------------------------------------------------
-    # UPIS U EXCEL — sheet "Ukupna prodaja"
+    # UPIS U EXCEL ? sheet "Ukupna prodaja"
     # -----------------------------------------------------------------
 
     if "Ukupna prodaja" in wb.sheetnames:
@@ -3676,7 +3759,7 @@ def analyze_sales():
     headers_out = [
         "Kategorija",
         "Kolicina",
-        "Udio po količini (%)",
+        "Udio po koli?ini (%)",
         "Vrijednost (KM)",
         "Udio po vrijednosti (%)",
         "COGS (KM)",
@@ -3712,7 +3795,7 @@ def analyze_sales():
     # Neto marza red uklonjen (racuna se u koloni Neto marza (%))
 
     # -----------------------------------------------------------------
-    # GRAFIKON — vrijednosti
+    # GRAFIKON ? vrijednosti
     # -----------------------------------------------------------------
 
     chart = BarChart()
@@ -3900,15 +3983,15 @@ def analyze_sales():
         wb.save(save_path)
     except PermissionError:
         messagebox.showerror(
-            "Greška",
-            "Ne mogu pristupiti file-u, ako je već otvoren u excel-u molim izgasite ga",
+            "Gre?ka",
+            "Ne mogu pristupiti file-u, ako je veÄ‡ otvoren u excel-u molim izgasite ga",
         )
         return
     except Exception:
-        messagebox.showerror("Greška", "Ne mogu sačuvati fajl.")
+        messagebox.showerror("Gre?ka", "Ne mogu sa?uvati fajl.")
         return
 
-    messagebox.showinfo("Uspjeh", "Analiza uspješno završena.\nSheet: Ukupna prodaja")
+    messagebox.showinfo("Uspjeh", "Analiza uspje?no zavr?ena.\nSheet: Ukupna prodaja")
 
 
 # -------------------------------------------------------------------------
@@ -4157,7 +4240,7 @@ def generate_promet_zaliha():
 
 
 # -------------------------------------------------------------------------
-# NABAVKA V11.0 – BUDŽET + POPUST + KG/CBM TRANSPORT (AVION/BROD)
+# NABAVKA V11.0 ? BUD?ET + POPUST + KG/CBM TRANSPORT (AVION/BROD)
 # -------------------------------------------------------------------------
 
 
@@ -4165,7 +4248,7 @@ def calculate_procurement():
     global file_path
 
     if not file_path:
-        messagebox.showerror("Greška", "Prvo učitaj fajl za analizu.")
+        messagebox.showerror("Gre?ka", "Prvo u?itaj fajl za analizu.")
         return
 
     load_path = output_file_path or file_path
@@ -4173,12 +4256,12 @@ def calculate_procurement():
         wb = load_workbook(load_path)
     except PermissionError:
         messagebox.showerror(
-            "Greška",
-            "Ne mogu pristupiti file-u, ako je već otvoren u excel-u molim izgasite ga",
+            "Gre?ka",
+            "Ne mogu pristupiti file-u, ako je veÄ‡ otvoren u excel-u molim izgasite ga",
         )
         return
     except Exception:
-        messagebox.showerror("Greška", "Ne mogu otvoriti fajl.")
+        messagebox.showerror("Gre?ka", "Ne mogu otvoriti fajl.")
         return
 
     if (
@@ -4196,11 +4279,11 @@ def calculate_procurement():
 
     ws_prodaja = get_sheet_by_name_ci(wb, "prodaja")
     if ws_prodaja is None:
-        messagebox.showerror("Greška", "Nedostaje sheet prodaja.")
+        messagebox.showerror("Gre?ka", "Nedostaje sheet prodaja.")
         return
 
     # ---------------------------------------------------------------------
-    # 1) UČITAVANJE PODATAKA
+    # 1) UÄŒITAVANJE PODATAKA
     # ---------------------------------------------------------------------
 
     df_p = pd.DataFrame(
@@ -4216,7 +4299,7 @@ def calculate_procurement():
     df_s = find_stanje_df(wb)
     if df_s is None:
         messagebox.showerror(
-            "Greška", "Nije pronađena kolona 'Stanje' ni u jednom sheet-u."
+            "Gre?ka", "Nije pronaÄ‘ena kolona 'Stanje' ni u jednom sheet-u."
         )
         return
 
@@ -4247,12 +4330,12 @@ def calculate_procurement():
             "Dugi repovi",
         ]
     if per_enabled:
-        allowed += ["Premium perike", "Klasične perike"]
+        allowed += ["Premium perike", "Klasi?ne perike"]
     if custom_enabled:
         allowed += ["Custom"]
 
     if not allowed:
-        messagebox.showerror("Greška", "Odaberite barem jednu kategoriju.")
+        messagebox.showerror("Gre?ka", "Odaberite barem jednu kategoriju.")
         return
 
     df_p = df_p[df_p["Kategorija"].isin(allowed)]
@@ -4292,7 +4375,7 @@ def calculate_procurement():
         df_p = df_p[(df_p["Datum"] >= start_date) & (df_p["Datum"] <= end_date)]
 
     # ---------------------------------------------------------------------
-    # 2) AGREGACIJA I IZRAČUNI
+    # 2) AGREGACIJA I IZRAÄŒUNI
     # ---------------------------------------------------------------------
 
     df_group = df_p.groupby("Sifra").agg(Kolicina=("Kolicina", "sum")).reset_index()
@@ -4307,13 +4390,13 @@ def calculate_procurement():
     df_group["Kategorija"] = df_group["Sifra"].apply(kategorija_za_sifru)
     custom_mask = df_group["Sifra"].str.upper().isin(CUSTOM_SKU_SET)
 
-    # dnevna prodaja (na osnovu ukupne količine / 60 dana)
+    # dnevna prodaja (na osnovu ukupne koli?ine / 60 dana)
     df_group["Dnevna_prodaja"] = df_group["Kolicina"] / float(period_days)
 
-    # % udjela po količini
+    # % udjela po koli?ini
     total_k = df_group["Kolicina"].sum()
     if total_k <= 0:
-        messagebox.showerror("Greška", "Ukupna prodaja je 0.")
+        messagebox.showerror("Gre?ka", "Ukupna prodaja je 0.")
         return
     df_group["pct"] = df_group["Kolicina"] / total_k
 
@@ -4377,7 +4460,7 @@ def calculate_procurement():
         custom_mask, "Minimalna_nabavka"
     ].apply(round_custom_qty)
 
-    # budžet
+    # bud?et
     try:
         budzet = safe_float(p_budget_entry.get(), 0.0)
     except:
@@ -4404,7 +4487,7 @@ def calculate_procurement():
             ["Minimalna_nabavka", "Kolicina_po_budzetu"]
         ].max(axis=1)
 
-    # za custom zaokruživanje i min 50
+    # za custom zaokru?ivanje i min 50
     df_group.loc[custom_mask, "Kolicina_po_budzetu"] = df_group.loc[
         custom_mask, "Kolicina_po_budzetu"
     ].apply(round_custom_qty)
@@ -4413,7 +4496,7 @@ def calculate_procurement():
     ].apply(round_custom_qty)
 
     # ---------------------------------------------------------
-    # 3) ±5% prilagođavanje budžeta
+    # 3) ?5% prilagoÄ‘avanje bud?eta
     # ---------------------------------------------------------
 
     lower = budzet * 0.95
@@ -4443,7 +4526,7 @@ def calculate_procurement():
                 break
             safety += 1
 
-        # poveća
+        # poveÄ‡a
         safety = 0
         while cost < lower and safety < 10000:
             for idx in order_desc:
@@ -4463,7 +4546,7 @@ def calculate_procurement():
         ].apply(round_custom_qty)
 
     # ---------------------------------------------------------
-    # 4) IZRAČUN TEŽINE I CBM-a
+    # 4) IZRAÄŒUN TE?INE I CBM-a
     # ---------------------------------------------------------
 
     df_group["Tezina_kg"] = (
@@ -4472,7 +4555,7 @@ def calculate_procurement():
     df_group["CBM"] = df_group["Kolicina_final"] * CBM_PO_KOMADU
 
     # podijeli na perike i ostalo (ostalo dodatno na main i custom)
-    perike_categories = {"Premium perike", "Klasične perike"}
+    perike_categories = {"Premium perike", "Klasi?ne perike"}
     perike_mask = df_group["Kategorija"].isin(perike_categories)
     df_perike = df_group[perike_mask].copy()
     df_rest = df_group[~perike_mask].copy()
@@ -4500,7 +4583,7 @@ def calculate_procurement():
     total_kom_perike = int(df_perike["Kolicina_final"].sum())
 
     # ---------------------------------------------------------
-    # 5) TRANSPORT OPCIJE (A2/B2 — KG i CBM)
+    # 5) TRANSPORT OPCIJE (A2/B2 ? KG i CBM)
     # ---------------------------------------------------------
 
     transport_tip = transport_var.get()  # avion / brod
@@ -4589,7 +4672,7 @@ def calculate_procurement():
             "Minimalna_nabavka",
             "Kolicina_po_budzetu",
             "Kolicina_za_nabavku",
-            "Težina_kg",
+            "Te?ina_kg",
             "Transport_tip",
         ]
     )
@@ -4639,7 +4722,7 @@ def calculate_procurement():
     ws.cell(start + 3, 1, "Total komada")
     ws.cell(start + 3, 2, total_artikli)
 
-    ws.cell(start + 4, 1, "Ukupna težina (kg)")
+    ws.cell(start + 4, 1, "Ukupna te?ina (kg)")
     ws.cell(start + 4, 2, round(total_kg, 2))
 
     ws.cell(start + 5, 1, "Ukupan volumen (CBM)")
@@ -4681,7 +4764,7 @@ def calculate_procurement():
             "Minimalna_nabavka",
             "Kolicina_po_budzetu",
             "Kolicina_za_nabavku",
-            "Te_ina_kg",
+            "TeÂ_ina_kg",
             "Transport_tip",
         ]
     )
@@ -4824,7 +4907,7 @@ def calculate_procurement():
             f"Avion: {avion_kg} USD/kg, {avion_cbm} USD/CBM, {avion_kom} USD/kom; Brod: {brod_kg} USD/kg, {brod_cbm} USD/CBM",
         )
 
-    ws.cell(start + 10, 1, "💰 Made by FEMMA finance department").font = Font(
+    ws.cell(start + 10, 1, "ðŸ’° Made by FEMMA finance department").font = Font(
         bold=True, color="FF5252"
     )
 
@@ -4833,27 +4916,27 @@ def calculate_procurement():
         wb.save(save_path)
     except PermissionError:
         messagebox.showerror(
-            "Greška",
-            "Ne mogu pristupiti file-u, ako je već otvoren u excel-u molim izgasite ga",
+            "Gre?ka",
+            "Ne mogu pristupiti file-u, ako je veÄ‡ otvoren u excel-u molim izgasite ga",
         )
         return
     except Exception:
-        messagebox.showerror("Greška", "Ne mogu sačuvati fajl.")
+        messagebox.showerror("Gre?ka", "Ne mogu sa?uvati fajl.")
         return
 
     messagebox.showinfo(
         "Uspjeh",
-        f"Nabavka sačuvana.\n"
+        f"Nabavka sa?uvana.\n"
         f"Artikli: {suma_artikli:.2f}\n"
         f"Transport: {ukupno_transport:.2f}\n"
         f"TOTAL: {total_val:.2f}\n"
-        f"Težina: {total_kg:.2f} kg\n"
+        f"Te?ina: {total_kg:.2f} kg\n"
         f"Volumen: {total_cbm:.4f} CBM",
     )
 
 
 # -------------------------------------------------------------------------
-# GUI – SIDEBAR I NAVIGACIJA
+# GUI ? SIDEBAR I NAVIGACIJA
 # -------------------------------------------------------------------------
 
 
@@ -4953,7 +5036,7 @@ def build_sidebar(self):
     btn6.pack(pady=8, fill="x", padx=10)
 
     footer = ctk.CTkLabel(
-        sidebar, text="💰 FEMMA finance dept.", font=ctk.CTkFont(size=12, weight="bold")
+        sidebar, text="ðŸ’° FEMMA finance dept.", font=ctk.CTkFont(size=12, weight="bold")
     )
     footer.pack(side="bottom", pady=20)
 
@@ -4961,7 +5044,7 @@ def build_sidebar(self):
 # Bind sidebar u klasu
 ctk.CTk.build_sidebar = build_sidebar
 # -------------------------------------------------------------------------
-# GUI – PANTHEON KONVERZIJA
+# GUI ? PANTHEON KONVERZIJA
 # -------------------------------------------------------------------------
 
 
@@ -4972,7 +5055,7 @@ def build_pantheon_page(self, parent):
 
     header = ctk.CTkLabel(
         frame,
-        text="Pantheon konverzija (.xls → čisti .xlsx)",
+        text="Pantheon konverzija (.xls ? ?isti .xlsx)",
         font=ctk.CTkFont(size=22, weight="bold"),
     )
     header.pack(pady=(10, 15))
@@ -4991,7 +5074,7 @@ def build_pantheon_page(self, parent):
 
     btn_convert = ctk.CTkButton(
         frame,
-        text="Konvertuj u čisti Excel",
+        text="Konvertuj u ?isti Excel",
         fg_color=ROSEGOLD,
         hover_color=ROSEGOLD_DARK,
         command=convert_pantheon,
@@ -5010,7 +5093,7 @@ def build_pantheon_page(self, parent):
 # Bind this into class
 ctk.CTk._build_pantheon_page = build_pantheon_page
 # -------------------------------------------------------------------------
-# GUI – UKUPNA PRODAJA
+# GUI ? UKUPNA PRODAJA
 # -------------------------------------------------------------------------
 
 
@@ -5021,7 +5104,7 @@ def build_sales_page(self, parent):
 
     header = ctk.CTkLabel(
         frame,
-        text="Ukupna prodaja — analiza MP vrijednosti",
+        text="Ukupna prodaja ? analiza MP vrijednosti",
         font=ctk.CTkFont(size=22, weight="bold"),
     )
     header.pack(pady=(10, 20))
@@ -5033,7 +5116,7 @@ def build_sales_page(self, parent):
     )
     sales_file_label.pack(pady=4)
 
-    # Dugme za učitavanje postojećeg .xlsx
+    # Dugme za u?itavanje postojećeg .xlsx
     def choose_sales_file():
         global file_path
         p = filedialog.askopenfilename(
@@ -5046,7 +5129,7 @@ def build_sales_page(self, parent):
 
     btn_choose = ctk.CTkButton(
         frame,
-        text="Učitaj file za analizu",
+        text="U?itaj file za analizu",
         fg_color="#1f6aa5",
         hover_color="#185a8f",
         command=choose_sales_file,
@@ -5080,7 +5163,7 @@ def build_sales_page(self, parent):
     )
     btn_output.pack(pady=6)
     # ===============================
-    #   FILTER DATUMA — OD / DO
+    #   FILTER DATUMA ? OD / DO
     # ===============================
 
     date_frame = ctk.CTkFrame(frame)
@@ -5158,7 +5241,7 @@ def build_sales_page(self, parent):
 # Bind into class
 ctk.CTk._build_sales_page = build_sales_page
 # -------------------------------------------------------------------------
-# GUI – PRORACUN PROMETA I ZALIHA
+# GUI ? PRORACUN PROMETA I ZALIHA
 # -------------------------------------------------------------------------
 
 
@@ -5432,7 +5515,7 @@ def build_promet_page(self, parent):
 # Bind into class
 ctk.CTk._build_promet_page = build_promet_page
 # -------------------------------------------------------------------------
-# GUI – NABAVKA (v11.0)
+# GUI ? NABAVKA (v11.0)
 # -------------------------------------------------------------------------
 
 
@@ -5451,7 +5534,7 @@ def build_proc_page(self, parent):
     header.pack(pady=(10, 15))
 
     # ===============================
-    #  SEKCIJA 1 — KATEGORIJE
+    #  SEKCIJA 1 ? KATEGORIJE
     # ===============================
 
     sec_cat = ctk.CTkFrame(frame)
@@ -5497,21 +5580,21 @@ def build_proc_page(self, parent):
         sec_cat, text="Repovi / Klipse / Ekstenzije", variable=p_cb_rep_var
     ).pack(anchor="w", padx=14, pady=2)
     ctk.CTkCheckBox(
-        sec_cat, text="Perike (Klasične / Premium)", variable=p_cb_per_var
+        sec_cat, text="Perike (Klasi?ne / Premium)", variable=p_cb_per_var
     ).pack(anchor="w", padx=14, pady=2)
     ctk.CTkCheckBox(
         sec_cat, text="Custom proizvodi (min 50 kom)", variable=p_cb_custom_var
     ).pack(anchor="w", padx=14, pady=2)
 
     # ===============================
-    #  SEKCIJA 2 — BUDŽET / POPUST
+    #  SEKCIJA 2 ? BUD?ET / POPUST
     # ===============================
 
     sec_form = ctk.CTkFrame(frame)
     sec_form.pack(fill="x", pady=10, padx=8)
 
-    # Budžet
-    ctk.CTkLabel(sec_form, text="Budžet (USD):").grid(
+    # Bud?et
+    ctk.CTkLabel(sec_form, text="Bud?et (USD):").grid(
         row=0, column=0, padx=10, pady=8, sticky="e"
     )
     global p_budget_entry
@@ -5520,7 +5603,7 @@ def build_proc_page(self, parent):
     p_budget_entry.grid(row=0, column=1, padx=10, pady=8)
 
     # Popust
-    ctk.CTkLabel(sec_form, text="Popust dobavljača (%):").grid(
+    ctk.CTkLabel(sec_form, text="Popust dobavlja?a (%):").grid(
         row=0, column=2, padx=10, pady=8, sticky="e"
     )
     global p_discount_entry
@@ -5547,7 +5630,7 @@ def build_proc_page(self, parent):
     ).grid(row=1, column=2, columnspan=2, padx=10, pady=8, sticky="w")
 
     # ===============================
-    #  SEKCIJA 3 — TRANSPORT OPCIJE
+    #  SEKCIJA 3 ? TRANSPORT OPCIJE
     # ===============================
 
     sec_tr = ctk.CTkFrame(frame)
@@ -5632,12 +5715,12 @@ def build_proc_page(self, parent):
     )
 
     # ===============================
-    #  SEKCIJA 4 — DUGME ZA RAČUNANJE
+    #  SEKCIJA 4 ? DUGME ZA RAÄŒUNANJE
     # ===============================
 
     btn_calc = ctk.CTkButton(
         frame,
-        text="Izračunaj nabavku",
+        text="Izra?unaj nabavku",
         fg_color=ROSEGOLD,
         hover_color=ROSEGOLD_DARK,
         height=40,
@@ -5682,7 +5765,10 @@ def build_izdavanje_page(self, parent):
     )
     header.pack(pady=(10, 15))
 
-    form_frame = ctk.CTkFrame(container)
+    scroll = ctk.CTkScrollableFrame(container)
+    scroll.pack(fill="both", expand=True, padx=5, pady=5)
+
+    form_frame = ctk.CTkFrame(scroll)
     form_frame.pack(fill="x", padx=10, pady=(0, 10))
     form_frame.grid_columnconfigure(1, weight=1)
     form_frame.grid_columnconfigure(3, weight=1)
@@ -5783,7 +5869,7 @@ def build_izdavanje_page(self, parent):
     izd_reason_entry.grid(row=5, column=1, columnspan=3, padx=10, pady=6, sticky="ew")
 
     # Izvor podataka
-    source_frame = ctk.CTkFrame(container)
+    source_frame = ctk.CTkFrame(scroll)
     source_frame.pack(fill="x", padx=10, pady=(0, 10))
     ctk.CTkLabel(source_frame, text="Izvor podataka", font=section_font).grid(
         row=0, column=0, columnspan=2, sticky="w", padx=10, pady=(8, 6)
@@ -5826,7 +5912,7 @@ def build_izdavanje_page(self, parent):
     btn_json.grid(row=1, column=1, padx=10, pady=6, sticky="e")
 
     # Dodavanje artikala
-    add_frame = ctk.CTkFrame(container)
+    add_frame = ctk.CTkFrame(scroll)
     add_frame.pack(fill="x", padx=10, pady=(0, 10))
     ctk.CTkLabel(add_frame, text="Dodavanje artikala", font=section_font).grid(
         row=0, column=0, columnspan=4, sticky="w", padx=10, pady=(8, 6)
@@ -5854,6 +5940,7 @@ def build_izdavanje_page(self, parent):
         add_frame,
         height=5,
         exportselection=False,
+        takefocus=0,
         font=(UI_FONT_FAMILY or "Segoe UI", 10),
     )
     izd_sku_listbox.grid(
@@ -5868,7 +5955,7 @@ def build_izdavanje_page(self, parent):
     ).grid(row=3, column=1, columnspan=3, padx=10, pady=(0, 6), sticky="w")
 
     # Tabela + akcije
-    mid_frame = ctk.CTkFrame(container)
+    mid_frame = ctk.CTkFrame(scroll)
     mid_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
     mid_frame.grid_columnconfigure(0, weight=1)
 
@@ -6048,6 +6135,12 @@ def build_izdavanje_page(self, parent):
             izd_sku_listbox.grid()
         else:
             izd_sku_listbox.grid_remove()
+        try:
+            izd_sku_entry.after(
+                1, lambda: (izd_sku_entry.focus_set(), izd_sku_entry.icursor("end"))
+            )
+        except Exception:
+            pass
 
     def _on_listbox_select(_evt=None):
         selection = izd_sku_listbox.curselection()
@@ -6058,10 +6151,23 @@ def build_izdavanje_page(self, parent):
         izd_sku_entry.delete(0, "end")
         izd_sku_entry.insert(0, sku)
         izd_sku_listbox.grid_remove()
+        try:
+            izd_sku_entry.focus_set()
+            izd_sku_entry.icursor("end")
+        except Exception:
+            pass
+
+    def _keep_entry_focus(_evt=None):
+        try:
+            izd_sku_entry.focus_set()
+            izd_sku_entry.icursor("end")
+        except Exception:
+            pass
 
     izd_sku_entry.bind("<KeyRelease>", _update_suggestions)
     izd_sku_entry.bind("<Return>", _add_item)
     izd_sku_listbox.bind("<<ListboxSelect>>", _on_listbox_select)
+    izd_sku_listbox.bind("<FocusIn>", _keep_entry_focus)
 
     def _delete_selected():
         selected = izd_tree.selection()
@@ -6262,7 +6368,13 @@ def build_izdavanje_page(self, parent):
             messagebox.showerror("Greska", f"Ne mogu kreirati PDF: {e}")
             return
         izd_log(f"PDF kreiran: {out_path}")
-        _refresh_doc_no()
+        if messagebox.askyesno(
+            "PDF kreiran",
+            f"PDF kreiran u folderu:\n{os.path.dirname(out_path)}\n\nZelite li kreirati novi dokument?",
+        ):
+            _reset_form()
+        else:
+            _refresh_doc_no()
 
     def _reset_form():
         izd_recipient_entry.configure(state="normal")
@@ -6374,14 +6486,14 @@ def build_izdavanje_page(self, parent):
 
     btn_memo = ctk.CTkButton(
         actions_frame,
-        text="Učitaj memorandum",
+        text="U?itaj memorandum",
         command=_choose_memo,
         font=button_font,
     )
     btn_memo.pack(fill="x", padx=10, pady=4)
 
     # Log
-    log_frame = ctk.CTkFrame(container)
+    log_frame = ctk.CTkFrame(scroll)
     log_frame.pack(fill="x", padx=10, pady=(0, 10))
     ctk.CTkLabel(log_frame, text="LOG", font=_ctk_font(size=12, weight="bold")).pack(
         anchor="w", padx=10, pady=(8, 4)
@@ -8395,7 +8507,7 @@ ctk.CTk._build_proc_page = build_proc_page
 ctk.CTk._build_izdavanje_page = build_izdavanje_page
 ctk.CTk._build_settings_page = build_settings_page
 # -------------------------------------------------------------------------
-# GLAVNA KLASA APLIKACIJE — FEMMA 12.0
+# GLAVNA KLASA APLIKACIJE ? FEMMA 12.0
 # -------------------------------------------------------------------------
 
 
@@ -8409,7 +8521,7 @@ class FemmaApp(ctk.CTk):
         self.after(200, force_balkan_keyboard_layout)
 
         # prozor
-        self.title("FEMMA 14.0 – BiH Edition (Modern UI)")
+        self.title("FEMMA 14.0 ? BiH Edition (Modern UI)")
         self.geometry("1200x900")
         self.minsize(1100, 800)
 
@@ -8452,7 +8564,7 @@ class FemmaApp(ctk.CTk):
 
 
 # -------------------------------------------------------------------------
-# MAIN – POKRETANJE APLIKACIJE
+# MAIN ? POKRETANJE APLIKACIJE
 # -------------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -8460,3 +8572,7 @@ if __name__ == "__main__":
         sys.exit(0)
     app = FemmaApp()
     app.mainloop()
+
+
+
+
